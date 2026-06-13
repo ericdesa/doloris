@@ -1,0 +1,154 @@
+// ---------------------------------------------------------------------------
+// Styles partagés entre app-tool-panel et app-zone-panel.
+// Importé via @use dans chaque feuille de style (encapsulation de vue Angular).
+// ---------------------------------------------------------------------------
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.panel__block {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.panel__title {
+  font-size: 0.95rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.panel__value {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.panel__hint {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
+.panel__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// ---------------------------------------------------------------------------
+// Sliders
+// ---------------------------------------------------------------------------
+.slider {
+  width: 100%;
+  accent-color: var(--color-primary);
+}
+
+.slider__scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--color-muted);
+  margin-top: 4px;
+}
+
+// ---------------------------------------------------------------------------
+// Cases à cocher (caractéristiques)
+// ---------------------------------------------------------------------------
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--color-ink);
+  cursor: pointer;
+
+  input {
+    accent-color: var(--color-primary);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Champs texte
+// ---------------------------------------------------------------------------
+.textarea,
+.select {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 0.84rem;
+  color: var(--color-ink);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  background: var(--color-surface-alt);
+
+  &:focus {
+    background: var(--color-surface);
+  }
+}
+
+.textarea {
+  resize: vertical;
+}
+
+// ---------------------------------------------------------------------------
+// Boutons
+// ---------------------------------------------------------------------------
+.btn {
+  font-family: var(--font-body);
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.btn--primary {
+  background: var(--color-primary);
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: var(--color-primary-dark);
+  }
+}
+
+.btn--ghost {
+  background: var(--color-surface-alt);
+  border-color: var(--color-border);
+  color: var(--color-ink);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary-dark);
+  }
+}
+
+.btn--danger {
+  &:hover:not(:disabled) {
+    border-color: #d9534f;
+    color: #d9534f;
+  }
+}

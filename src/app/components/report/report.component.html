@@ -1,0 +1,59 @@
+<div class="report">
+  <header class="report__nav no-print">
+    <button type="button" class="report__back" (click)="back()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Retour
+    </button>
+    <button type="button" class="report__print" (click)="print()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 6 2 18 2 18 9"/>
+        <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
+      </svg>
+      Imprimer
+    </button>
+  </header>
+
+  <main class="report__body">
+    <h1>Doloris - Cartographie de la douleur</h1>
+    <p class="subtitle">Compte-rendu généré le {{ today }}</p>
+    <p class="count">
+      {{ zones().length }} zone{{ zones().length > 1 ? 's' : '' }}
+      renseignée{{ zones().length > 1 ? 's' : '' }}
+    </p>
+    <hr>
+
+    @for (zone of zones(); track zone.id) {
+      @let type = getPainType(zone.type);
+      <div class="zone" [style.border-left-color]="type.color">
+        <div class="zone-body">
+          <div class="zone-info">
+            <p class="zone-name">{{ zone.bodyPartLabel }}</p>
+            <p class="row">
+              <span class="swatch" [style.background]="type.color"></span>
+              {{ type.label }} — {{ type.description }}
+            </p>
+            <p class="row">Intensité : <strong>{{ zone.intensity }}/10</strong></p>
+            @if (zone.characteristics.length) {
+              <p class="row">Caractéristiques : {{ zone.characteristics.join(', ') }}</p>
+            }
+            @if (zone.notes.trim()) {
+              <p class="notes">{{ zone.notes.trim() }}</p>
+            }
+          </div>
+          @if (getImage(zone.id)) {
+            <img
+              class="zone-img"
+              [src]="getImage(zone.id)"
+              [alt]="'Capture de la zone ' + zone.bodyPartLabel"
+            >
+          }
+        </div>
+      </div>
+    }
+
+    <p class="footer">Document généré par Doloris</p>
+  </main>
+</div>

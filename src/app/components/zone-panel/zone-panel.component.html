@@ -1,0 +1,91 @@
+<section class="panel">
+  <div class="panel__block">
+    <h2 class="panel__title">
+      Zones enregistrées
+      <span class="panel__value">{{ painData.zoneCount() }}</span>
+    </h2>
+
+    @if (painData.zoneCount() === 0) {
+      <p class="panel__hint">
+        Aucune zone pour l'instant. Passez en mode « Dessiner » et tracez une zone directement
+        sur le modèle 3D.
+      </p>
+    } @else {
+      <ul class="zone-list">
+        @for (zone of zonesNewestFirst(); track zone.id) {
+          <li class="zone-list__item" [class.zone-list__item--active]="painData.selectedZoneId() === zone.id">
+            <button type="button" class="zone-list__summary" (click)="selectZone(zone)">
+              <span class="zone-list__swatch" [style.background]="getPainType(zone.type).color"></span>
+              <span class="zone-list__info">
+                <strong>{{ zone.bodyPartLabel }}</strong>
+                <small>{{ getPainType(zone.type).label }} · intensité {{ zone.intensity }}/10</small>
+              </span>
+              <span class="zone-list__chevron">{{ painData.selectedZoneId() === zone.id ? '−' : '+' }}</span>
+            </button>
+
+            @if (painData.selectedZoneId() === zone.id) {
+              <div class="zone-detail">
+                <label class="zone-detail__field">
+                  <span>Type de douleur</span>
+                  <select class="select" [value]="zone.type" (change)="onTypeChange($event, zone)">
+                    @for (type of painTypes; track type.id) {
+                      <option [value]="type.id">{{ type.label }}</option>
+                    }
+                  </select>
+                </label>
+
+                <label class="zone-detail__field">
+                  <span>Intensité : {{ zone.intensity }}/10</span>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    step="1"
+                    class="slider"
+                    [value]="zone.intensity"
+                    (input)="onIntensityChange($event, zone)"
+                  />
+                </label>
+
+                <div class="zone-detail__field">
+                  <span>Caractéristiques</span>
+                  <div class="checkbox-grid">
+                    @for (item of characteristics; track item) {
+                      <label class="checkbox">
+                        <input
+                          type="checkbox"
+                          [checked]="zone.characteristics.includes(item)"
+                          (change)="toggleCharacteristic(zone, item)"
+                        />
+                        <span>{{ item }}</span>
+                      </label>
+                    }
+                  </div>
+                </div>
+
+                <label class="zone-detail__field">
+                  <span>Notes</span>
+                  <textarea
+                    class="textarea"
+                    rows="3"
+                    [value]="zone.notes"
+                    (input)="onNotesChange($event, zone)"
+                    placeholder="Précisions sur cette zone…"
+                  ></textarea>
+                </label>
+
+                <div class="zone-detail__actions">
+                  <button type="button" class="btn btn--ghost" (click)="closeDetail()">Fermer</button>
+                  <button type="button" class="btn btn--ghost btn--danger" (click)="deleteZone(zone)">
+                    Supprimer cette zone
+                  </button>
+                </div>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+</section>

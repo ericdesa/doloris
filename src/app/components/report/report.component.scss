@@ -1,0 +1,160 @@
+.report {
+  font-family: Georgia, 'Times New Roman', serif;
+  min-height: 100vh;
+  background: #fff;
+  color: #1a2228;
+  line-height: 1.65;
+}
+
+.report__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  border-bottom: 1px solid #dbe5e8;
+  background: #f9fbfc;
+}
+
+.report__back,
+.report__print {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid #dbe5e8;
+  background: #fff;
+  color: #2e3d45;
+  font-size: 0.875rem;
+  font-family: system-ui, sans-serif;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: #5a7a8a;
+    color: #1a2228;
+  }
+}
+
+.report__body {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 56px 32px;
+}
+
+h1 {
+  font-size: 1.45rem;
+  letter-spacing: -0.01em;
+  margin: 0 0 4px;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #5a6b73;
+  margin: 0 0 36px;
+}
+
+.count {
+  font-size: 0.88rem;
+  color: #5a6b73;
+  margin-bottom: 28px;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #dbe5e8;
+  margin: 36px 0;
+}
+
+.zone {
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border-left: 4px solid #ccc;
+  background: #f9fbfc;
+  border-radius: 0 6px 6px 0;
+}
+
+.zone-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.zone-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.zone-img {
+  flex: none;
+  width: 200px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #dbe5e8;
+}
+
+.zone-name {
+  font-weight: bold;
+  font-size: 1rem;
+  margin: 0 0 8px;
+}
+
+.row {
+  font-size: 0.88rem;
+  color: #2e3d45;
+  margin: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.notes {
+  font-size: 0.86rem;
+  font-style: italic;
+  color: #5a6b73;
+  margin: 8px 0 0;
+}
+
+.footer {
+  font-size: 0.8rem;
+  color: #8a9da5;
+  text-align: center;
+  margin-top: 48px;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .report__body {
+    padding: 0;
+  }
+
+  .zone {
+    background: #fff;
+  }
+
+  .zone-body {
+    flex-direction: column;
+  }
+
+  .zone-img {
+    width: 100%;
+    height: auto;
+    max-height: 220px;
+  }
+
+  @page {
+    margin: 20mm 18mm;
+  }
+}

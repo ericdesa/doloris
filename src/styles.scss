@@ -1,0 +1,87 @@
+// ---------------------------------------------------------------------------
+// Tokens de design — "carnet clinique"
+// Palette froide et sobre pour l'interface, contrastant avec la légende
+// de couleurs de la douleur (seul élément volontairement vif de l'écran).
+// ---------------------------------------------------------------------------
+:root {
+  --color-bg: #eef3f4;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f6f9fa;
+  --color-ink: #1f2a30;
+  --color-muted: #667b83;
+  --color-border: #dbe5e8;
+  --color-primary: #2c6e7f;
+  --color-primary-dark: #1b4b5a;
+  --color-primary-soft: #e3eef0;
+
+  // Échelle de la douleur — légende clinique (cf. pain-types.ts)
+  --pain-burning: #e0563f;
+  --pain-stabbing: #f3a23a;
+  --pain-tingling: #9b6bd6;
+  --pain-aching: #3a86c8;
+  --pain-cramping: #9c6644;
+  --pain-numbness: #98a4a8;
+  --pain-pressure: #2f9e8f;
+  --pain-other: #6c7a82;
+
+  --font-display: 'Space Grotesk', 'Inter', sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --shadow-sm: 0 1px 2px rgba(27, 75, 90, 0.06);
+  --shadow-md: 0 6px 20px rgba(27, 75, 90, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+button {
+  font-family: var(--font-body);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c4d3d7;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

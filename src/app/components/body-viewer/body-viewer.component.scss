@@ -1,0 +1,460 @@
+.viewer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+
+.viewer__canvas {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &--paint {
+    cursor: crosshair;
+
+    &:active {
+      cursor: crosshair;
+    }
+  }
+}
+
+.viewer__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.viewer__spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.viewer__badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  background: rgba(27, 75, 90, 0.92);
+  color: #fff;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+
+  code {
+    font-family: var(--font-mono);
+    background: rgba(255, 255, 255, 0.16);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Toolbar flottante (haut gauche)
+// ---------------------------------------------------------------------------
+
+.viewer__toolbar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  // Le conteneur est transparent aux événements ; seuls les enfants capturent
+  pointer-events: none;
+}
+
+// Groupe horizontal de boutons pill
+.tb-group {
+  display: flex;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+// Bouton pill générique
+.tb-btn {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--color-primary-dark);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(4px);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &--active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: var(--color-primary-dark);
+      border-color: var(--color-primary-dark);
+    }
+  }
+
+  &--danger:hover:not(:disabled) {
+    border-color: #d9534f;
+    color: #d9534f;
+  }
+}
+
+// Pastilles de type de douleur
+.tb-swatches {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(4px);
+  pointer-events: auto;
+}
+
+.tb-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--c);
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  transition: transform 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    transform: scale(1.3);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 35%, transparent);
+  }
+
+  &--active {
+    border-color: #fff;
+    box-shadow: 0 0 0 3px var(--c);
+    transform: scale(1.15);
+  }
+}
+
+// Pill avec label + slider
+.tb-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(4px);
+  pointer-events: auto;
+}
+
+.tb-pill__label {
+  font-size: 0.78rem;
+  color: var(--color-muted);
+  white-space: nowrap;
+
+  strong {
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+}
+
+.intensity-track {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.intensity-step {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: var(--color-border);
+  transition: transform 0.1s, background 0.15s;
+  flex-shrink: 0;
+
+  &--current {
+    transform: scale(1.5);
+  }
+
+  &:hover:not(.intensity-step--current) {
+    transform: scale(1.25);
+  }
+}
+
+.tb-pill__value {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  white-space: nowrap;
+
+  small {
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--color-muted);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Haut droit : groupe Debug + Recentrer
+// ---------------------------------------------------------------------------
+
+.viewer__top-right {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.viewer__recenter {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(4px);
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: var(--color-primary);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Panneau debug (bas gauche)
+// ---------------------------------------------------------------------------
+
+.viewer__debug {
+  position: absolute;
+  bottom: 48px;
+  left: 12px;
+  background: rgba(15, 23, 32, 0.88);
+  color: #e8edf2;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  border-radius: var(--radius-sm, 6px);
+  padding: 8px 10px;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+  min-width: 180px;
+}
+
+.debug__coords {
+  color: #9bb8c8;
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+
+  strong { color: #e8edf2; }
+}
+
+.debug__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.debug__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 1px 0;
+  color: #7a99aa;
+
+  &--winner {
+    color: #7eefc5;
+    font-weight: 600;
+
+    &::before { content: '▶ '; }
+  }
+}
+
+.debug__dist {
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
+// ---------------------------------------------------------------------------
+// Centroïdes debug (sur-impression modèle 3D)
+// ---------------------------------------------------------------------------
+
+.viewer__centroids {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.centroid-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.centroid-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff3b3b;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.6);
+  flex-shrink: 0;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.centroid-marker--selected {
+  .centroid-dot {
+    background: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.45), 0 0 8px rgba(59, 130, 246, 0.7);
+    animation: centroid-pulse 1.2s ease-in-out infinite;
+  }
+
+  .centroid-label {
+    background: rgba(37, 99, 235, 0.88);
+  }
+}
+
+@keyframes centroid-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.45), 0 0 8px rgba(59, 130, 246, 0.7); }
+  50%       { box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.2), 0 0 14px rgba(59, 130, 246, 0.5); }
+}
+
+.centroid-label {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.63rem;
+  line-height: 1;
+  color: #fff;
+  background: rgba(15, 23, 32, 0.78);
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  backdrop-filter: blur(2px);
+  transition: background 0.15s;
+}
+
+// ---------------------------------------------------------------------------
+// Panneau d'édition du centroïde sélectionné (bas droite)
+// ---------------------------------------------------------------------------
+
+.centroid-edit-panel {
+  position: absolute;
+  bottom: 48px;
+  right: 12px;
+  background: rgba(15, 23, 32, 0.88);
+  color: #e8edf2;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  border-radius: var(--radius-sm, 6px);
+  padding: 10px 12px;
+  backdrop-filter: blur(4px);
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+.cep__key {
+  color: #7eefc5;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+}
+
+.cep__coords {
+  color: #9bb8c8;
+  strong { color: #e8edf2; }
+}
+
+.cep__hint {
+  color: #7a99aa;
+  font-size: 0.67rem;
+  font-family: var(--font-body, sans-serif);
+  font-style: italic;
+}
+
+.cep__actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+// ---------------------------------------------------------------------------
+// Indice bas (mode actif)
+// ---------------------------------------------------------------------------
+
+.viewer__hint {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--color-ink);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 7px 16px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+}
