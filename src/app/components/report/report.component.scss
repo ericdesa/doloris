@@ -1,5 +1,4 @@
 .report {
-  font-family: Georgia, 'Times New Roman', serif;
   min-height: 100vh;
   background: #fff;
   color: #1a2228;
@@ -39,13 +38,35 @@
 .report__body {
   max-width: 720px;
   margin: 0 auto;
-  padding: 56px 32px;
+  padding: 32px;
+}
+
+.report__logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+
+.report__brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background: #2e3d45;
+  color: #fff;
+  font-family: system-ui, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  flex: none;
 }
 
 h1 {
   font-size: 1.45rem;
   letter-spacing: -0.01em;
-  margin: 0 0 4px;
+  margin: 0;
 }
 
 .subtitle {
@@ -78,6 +99,10 @@ hr {
   display: flex;
   align-items: flex-start;
   gap: 16px;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+  }
 }
 
 .zone-info {
@@ -92,6 +117,12 @@ hr {
   object-fit: cover;
   border-radius: 6px;
   border: 1px solid #dbe5e8;
+
+  @media (max-width: 600px) {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+  }
 }
 
 .zone-name {

@@ -1,12 +1,13 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject, untracked, ChangeDetectionStrategy, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 
 import { BodySceneEngine, RaycastHit } from '../../services/body-scene.engine';
 import { PainDataService } from '../../services/pain-data.service';
+import { ZoneMapService } from '../../services/zone-map.service';
 import { findZoneAtUv } from '../../services/geometry.utils';
-import { bodyPartLabel, BODY_PART_LABELS, BODY_PART_CENTROIDS, BodyPartCandidate } from '../../models/body-parts';
+import { resolveZoneLabel } from '../../services/zone-lookup.utils';
 import { PAIN_TYPES, getPainType } from '../../models/pain-types';
 import { UvPoint } from '../../models/pain-zone.model';
+import { ZoneDrag } from '../../models/zone-drag.model';
 
 function blendWithWhite(hex: string, ratio: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -17,7 +18,7 @@ function blendWithWhite(hex: string, ratio: number): string {
 
 @Component({
     selector: 'app-body-viewer',
-    imports: [DecimalPipe],
+    imports: [],
     templateUrl: './body-viewer.component.html',
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './body-viewer.component.scss'
@@ -25,23 +26,32 @@ function blendWithWhite(hex: string, ratio: number): string {
 export class BodyViewerComponent implements AfterViewInit, OnDestroy {
   @ViewChild('viewerContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
 
-  readonly painData = inject(PainDataService);
-  readonly painTypes = PAIN_TYPES;
+  readonly painData    = inject(PainDataService);
+  readonly zoneMapService = inject(ZoneMapService);
+  readonly painTypes   = PAIN_TYPES;
 
   private engine: BodySceneEngine | null = null;
 
+  // Pain drawing state
   private isDrawing = false;
   private currentZoneId: string | null = null;
   private currentMeshName: string | null = null;
   private currentPoints: UvPoint[] = [];
 
-  readonly modelSource = signal<'gltf' | 'fallback' | null>(null);
-  readonly isLoading = signal(true);
-  readonly debugMode = signal(false);
-  readonly debugInfo = signal<{ winner: string; nx: number; ny: number; nz: number; candidates: BodyPartCandidate[] } | null>(null);
-  readonly centroidOverlay = signal<Array<{ key: string; x: number; y: number }>>([]);
-  readonly selectedCentroidKey = signal<string | null>(null);
-  readonly editedCentroids = signal([...BODY_PART_CENTROIDS] as Array<{ key: string; nx: number; ny: number; nz: number }>);
+  // Zone painting state
+  private isDrawingZone = false;
+  private currentZoneMesh: string | null = null;
+  private currentZoneDrag: ZoneDrag | null = null;
+
+  readonly debugMode      = signal(new URLSearchParams(window.location.search).has('debug'));
+  readonly isLoading      = signal(true);
+  readonly showZoneMap    = signal(false);
+  private zoneMapRendered = signal(false);
+  readonly zoneDrawMode   = signal(false);
+  readonly activePaintZoneKey = signal<string | null>(null);
+  readonly zoneBrushRadius    = signal(0.02);
+
+  readonly zoneEntries = computed(() => Object.entries(this.zoneMapService.colors()));
 
   readonly intensityDotColors = computed(() => {
     const type = getPainType(this.painData.draft().type);
@@ -60,28 +70,53 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
 
     effect(() => {
       const zone = this.painData.selectedZone();
-      if (zone) {
-        this.engine?.focusOnZone(zone.meshName, zone.points);
+      if (zone) this.engine?.focusOnZone(zone.meshName, zone.points);
+    });
+
+    // Visibilité de l'overlay de zone map
+    effect(() => {
+      this.engine?.setZoneMapVisible(this.showZoneMap());
+    });
+
+    // Entrer en mode dessin de zones active automatiquement l'overlay
+    effect(() => {
+      if (this.zoneDrawMode()) {
+        untracked(() => {
+          if (!this.showZoneMap()) this.showZoneMap.set(true);
+        });
+      }
+    });
+
+    // Lazy-render : déclenche le calcul vertex la première fois que l'overlay est activé
+    effect(() => {
+      if (this.showZoneMap() && !untracked(() => this.zoneMapRendered())) {
+        untracked(() => {
+          if (!this.engine) return;
+          console.time("[doloris] replayZones (dev)");
+          this.engine.replayZoneDragsBatch(this.zoneMapService.drags());
+          console.timeEnd("[doloris] replayZones (dev)");
+          this.zoneMapRendered.set(true);
+        });
       }
     });
   }
 
   async ngAfterViewInit(): Promise<void> {
+    console.time("[doloris] init");
     const container = this.containerRef.nativeElement;
     this.engine = new BodySceneEngine(container);
-    this.engine.onFrame = () => {
-      if (this.debugMode()) {
-        this.centroidOverlay.set(this.engine!.getCentroidScreenPositions(this.editedCentroids()));
-      }
-    };
     try {
-      this.modelSource.set(await this.engine.loadModel('assets/models/body.glb'));
+      console.time("[doloris] loadModel");
+      await this.engine.loadModel('assets/models/body.glb');
+      console.timeEnd("[doloris] loadModel");
+
       this.engine.redrawAll(this.painData.zones());
       this.painData.captureZone = (m, p) => this.engine!.captureZone(m, p);
     } catch (err) {
       console.error('[doloris] Erreur critique au chargement:', err);
     } finally {
       this.isLoading.set(false);
+      console.timeEnd("[doloris] init");
     }
   }
 
@@ -105,40 +140,56 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  clearZoneMap(): void {
+    if (!window.confirm('Effacer toute la carte de zones peinte ?')) return;
+    this.zoneMapService.clear();
+    this.engine?.clearZoneMap();
+    this.showZoneMap.set(false);
+  }
+
+  onZoneColorChange(key: string, event: Event): void {
+    this.zoneMapService.setColor(key, (event.target as HTMLInputElement).value);
+  }
+
+  resetColors(): void {
+    this.zoneMapService.resetColors();
+  }
+
+  onZoneBrushChange(event: Event): void {
+    this.zoneBrushRadius.set(Number((event.target as HTMLInputElement).value));
+  }
+
   // -----------------------------------------------------------------------
   // Interaction pointeur
   // -----------------------------------------------------------------------
 
-  selectCentroid(key: string, event: PointerEvent): void {
-    event.stopPropagation();
-    this.selectedCentroidKey.set(this.selectedCentroidKey() === key ? null : key);
-  }
-
-  copyEditedCentroids(): void {
-    const lines = this.editedCentroids().map(c => {
-      const ny = c.ny.toFixed(3);
-      const nz = c.nz >= 0 ? `+${c.nz.toFixed(2)}` : c.nz.toFixed(2);
-      return `  { key: '${c.key}',${' '.repeat(Math.max(1, 22 - c.key.length))}nx: ${c.nx >= 0 ? ' ' : ''}${c.nx.toFixed(3)}, ny: ${ny}, nz: ${nz} },`;
-    });
-    navigator.clipboard.writeText(lines.join('\n'));
-  }
-
-  resetCentroids(): void {
-    this.editedCentroids.set([...BODY_PART_CENTROIDS]);
-    this.selectedCentroidKey.set(null);
+  private finishZoneDraw(): void {
+    if (!this.isDrawingZone) return;
+    if (this.currentZoneDrag && this.currentZoneDrag.points.length > 0) {
+      this.zoneMapService.addDrag(this.currentZoneDrag);
+    }
+    this.isDrawingZone = false;
+    this.currentZoneMesh = null;
+    this.currentZoneDrag = null;
+    this.engine?.setControlsEnabled(true);
   }
 
   onPointerDown(event: PointerEvent): void {
     if (!this.engine || event.button !== 0) return;
 
-    if (this.debugMode() && this.selectedCentroidKey()) {
+    if (this.zoneDrawMode()) {
+      const paintKey = this.activePaintZoneKey();
+      if (!paintKey) return;
       const hit = this.engine.raycastFromScreen(event.clientX, event.clientY);
-      if (hit) {
-        const { nx, ny, nz } = this.engine.normalizePoint(hit.uv.wx ?? 0, hit.uv.wy ?? 0, hit.uv.wz ?? 0);
-        const key = this.selectedCentroidKey()!;
-        this.editedCentroids.update(cs => cs.map(c => c.key === key ? { ...c, nx, ny, nz } : c));
-      }
-      this.selectedCentroidKey.set(null);
+      if (!hit) return;
+      const color = this.zoneMapService.colors()[paintKey];
+      const p = { wx: hit.worldPoint.x, wy: hit.worldPoint.y, wz: hit.worldPoint.z };
+      this.currentZoneDrag = { meshName: hit.meshName, colorHex: color, brushRadius: this.zoneBrushRadius(), points: [p] };
+      this.engine.paintZone(hit.meshName, hit.worldPoint, color, this.zoneBrushRadius());
+      this.isDrawingZone = true;
+      this.currentZoneMesh = hit.meshName;
+      this.engine.setControlsEnabled(false);
+      (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
       return;
     }
 
@@ -146,10 +197,12 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
     if (!hit) return;
 
     if (this.painData.mode() === 'paint') {
-      const inferredKey = BODY_PART_LABELS[hit.meshName] !== undefined
-        ? hit.meshName
-        : this.engine!.inferBodyPart(hit.uv.wx ?? 0, hit.uv.wy ?? 0, hit.uv.wz ?? 0);
-      const label = bodyPartLabel(inferredKey);
+      const label = resolveZoneLabel(
+        this.zoneMapService.drags(),
+        this.engine.currentModelRadius,
+        hit.meshName,
+        hit.worldPoint.x, hit.worldPoint.y, hit.worldPoint.z
+      );
       const zone = this.painData.startZone(hit.meshName, label, hit.uv);
 
       this.currentZoneId = zone.id;
@@ -170,15 +223,18 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
 
   onPointerMove(event: PointerEvent): void {
     if (!this.engine) return;
-    const needsRaycast = this.debugMode() || (this.isDrawing && !!this.currentMeshName);
+    const needsRaycast = (this.isDrawing && !!this.currentMeshName)
+      || (this.isDrawingZone && !!this.currentZoneMesh);
     if (!needsRaycast) return;
 
     const hit = this.engine.raycastFromScreen(event.clientX, event.clientY);
 
-    if (this.debugMode()) {
-      this.debugInfo.set(hit
-        ? this.engine.inferBodyPartDebug(hit.uv.wx ?? 0, hit.uv.wy ?? 0, hit.uv.wz ?? 0)
-        : null);
+    if (this.isDrawingZone && this.currentZoneMesh && this.currentZoneDrag && hit?.meshName === this.currentZoneMesh) {
+      const color = this.zoneMapService.colors()[this.activePaintZoneKey() ?? ''];
+      if (color) {
+        this.currentZoneDrag.points.push({ wx: hit.worldPoint.x, wy: hit.worldPoint.y, wz: hit.worldPoint.z });
+        this.engine.paintZone(hit.meshName, hit.worldPoint, color, this.zoneBrushRadius());
+      }
     }
 
     if (this.isDrawing && this.currentMeshName && hit && hit.meshName === this.currentMeshName) {
@@ -189,10 +245,12 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
 
   onPointerUp(): void {
     this.finishStroke();
+    this.finishZoneDraw();
   }
 
   onPointerLeave(): void {
     this.finishStroke();
+    this.finishZoneDraw();
   }
 
   private paintPoint(hit: RaycastHit): void {

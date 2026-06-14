@@ -272,170 +272,82 @@
   }
 }
 
+
 // ---------------------------------------------------------------------------
-// Panneau debug (bas gauche)
+// Palette de dessin de zones
 // ---------------------------------------------------------------------------
 
-.viewer__debug {
+.zone-palette {
   position: absolute;
-  bottom: 48px;
-  left: 12px;
-  background: rgba(15, 23, 32, 0.88);
-  color: #e8edf2;
-  font-family: var(--font-mono, monospace);
-  font-size: 0.72rem;
-  border-radius: var(--radius-sm, 6px);
-  padding: 8px 10px;
-  pointer-events: none;
-  backdrop-filter: blur(4px);
-  min-width: 180px;
-}
-
-.debug__coords {
-  color: #9bb8c8;
-  margin-bottom: 6px;
-  letter-spacing: 0.02em;
-
-  strong { color: #e8edf2; }
-}
-
-.debug__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.debug__item {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 1px 0;
-  color: #7a99aa;
-
-  &--winner {
-    color: #7eefc5;
-    font-weight: 600;
-
-    &::before { content: '▶ '; }
-  }
-}
-
-.debug__dist {
-  opacity: 0.75;
-  font-variant-numeric: tabular-nums;
-}
-
-// ---------------------------------------------------------------------------
-// Centroïdes debug (sur-impression modèle 3D)
-// ---------------------------------------------------------------------------
-
-.viewer__centroids {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.centroid-marker {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-.centroid-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #ff3b3b;
-  border: 1.5px solid #fff;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.6);
-  flex-shrink: 0;
-  transition: background 0.15s, box-shadow 0.15s;
-}
-
-.centroid-marker--selected {
-  .centroid-dot {
-    background: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.45), 0 0 8px rgba(59, 130, 246, 0.7);
-    animation: centroid-pulse 1.2s ease-in-out infinite;
-  }
-
-  .centroid-label {
-    background: rgba(37, 99, 235, 0.88);
-  }
-}
-
-@keyframes centroid-pulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.45), 0 0 8px rgba(59, 130, 246, 0.7); }
-  50%       { box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.2), 0 0 14px rgba(59, 130, 246, 0.5); }
-}
-
-.centroid-label {
-  font-family: var(--font-mono, monospace);
-  font-size: 0.63rem;
-  line-height: 1;
-  color: #fff;
-  background: rgba(15, 23, 32, 0.78);
-  padding: 1px 5px;
-  border-radius: 3px;
-  white-space: nowrap;
-  backdrop-filter: blur(2px);
-  transition: background 0.15s;
-}
-
-// ---------------------------------------------------------------------------
-// Panneau d'édition du centroïde sélectionné (bas droite)
-// ---------------------------------------------------------------------------
-
-.centroid-edit-panel {
-  position: absolute;
-  bottom: 48px;
+  top: 52px;
   right: 12px;
-  background: rgba(15, 23, 32, 0.88);
-  color: #e8edf2;
-  font-family: var(--font-mono, monospace);
-  font-size: 0.72rem;
-  border-radius: var(--radius-sm, 6px);
-  padding: 10px 12px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  box-shadow: var(--shadow-md);
   backdrop-filter: blur(4px);
-  min-width: 200px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  pointer-events: auto;
+  gap: 8px;
+  max-width: 240px;
 }
 
-.cep__key {
-  color: #7eefc5;
-  font-weight: 700;
-  font-size: 0.78rem;
-  letter-spacing: 0.03em;
-}
-
-.cep__coords {
-  color: #9bb8c8;
-  strong { color: #e8edf2; }
-}
-
-.cep__hint {
-  color: #7a99aa;
-  font-size: 0.67rem;
-  font-family: var(--font-body, sans-serif);
-  font-style: italic;
-}
-
-.cep__actions {
+.zone-palette__swatches {
   display: flex;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.zone-swatch {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background: var(--zc);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0.75;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  transition: opacity 0.12s, box-shadow 0.12s;
+
+  &:hover { opacity: 0.9; }
+
+  &--active {
+    opacity: 1;
+    border-color: rgba(0, 0, 0, 0.35);
+    box-shadow: 0 0 0 2px var(--zc);
+  }
+}
+
+.zone-palette__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zone-palette__label {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  white-space: nowrap;
+  min-width: 52px;
+}
+
+.zone-palette__clear {
   margin-top: 2px;
+  align-self: flex-start;
+}
+
+.cep__color {
+  width: 32px;
+  height: 22px;
+  padding: 1px 2px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
 }
 
 // ---------------------------------------------------------------------------

@@ -16,12 +16,8 @@ export class MapperComponent {
   readonly painData = inject(PainDataService);
   private readonly router = inject(Router);
 
-  savedFeedback = false;
-
-  save(): void {
-    this.painData.save();
-    this.savedFeedback = true;
-    setTimeout(() => { this.savedFeedback = false; }, 1800);
+  openAbout(): void {
+    this.router.navigate(['/about']);
   }
 
   openReport(): void {

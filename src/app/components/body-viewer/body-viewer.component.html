@@ -108,17 +108,28 @@
       }
     </div>
 
-    <!-- Haut droit : Debug + Recentrer -->
+    <!-- Haut droit : Zones + Recentrer -->
     <div class="viewer__top-right">
-      <button
-        type="button"
-        class="tb-btn"
-        [class.tb-btn--active]="debugMode()"
-        (click)="debugMode.set(!debugMode())"
-        title="Mode debug : affiche le classement des zones au survol"
-      >
-        ⬡ Debug
-      </button>
+      @if (debugMode()) {
+        <button
+          type="button"
+          class="tb-btn"
+          [class.tb-btn--active]="showZoneMap()"
+          (click)="showZoneMap.set(!showZoneMap())"
+          title="Afficher la carte des zones anatomiques"
+        >
+          ◈ Zones
+        </button>
+        <button
+          type="button"
+          class="tb-btn"
+          [class.tb-btn--active]="zoneDrawMode()"
+          (click)="zoneDrawMode.set(!zoneDrawMode())"
+          title="Dessiner les zones directement sur le modèle"
+        >
+          ✎ Zones
+        </button>
+      }
       <button
         type="button"
         class="viewer__recenter"
@@ -128,67 +139,51 @@
         ⤢ Recentrer
       </button>
     </div>
-  }
 
-  @if (debugMode()) {
-    <div class="viewer__centroids">
-      @for (c of centroidOverlay(); track c.key) {
-        <div
-          class="centroid-marker"
-          [class.centroid-marker--selected]="selectedCentroidKey() === c.key"
-          [style.left.px]="c.x"
-          [style.top.px]="c.y"
-          (pointerdown)="selectCentroid(c.key, $event)"
-        >
-          <span class="centroid-dot"></span>
-          <span class="centroid-label">{{ c.key }}</span>
-        </div>
-      }
-    </div>
-  }
-
-  @if (debugMode() && selectedCentroidKey(); as key) {
-    <div class="centroid-edit-panel">
-      <div class="cep__key">{{ key }}</div>
-      @if (editedCentroids(); as cs) {
-        @for (c of cs; track c.key) {
-          @if (c.key === key) {
-            <div class="cep__coords">
-              nx&nbsp;<strong>{{ c.nx | number:'1.3-3' }}</strong>
-              &ensp;ny&nbsp;<strong>{{ c.ny | number:'1.3-3' }}</strong>
-              &ensp;nz&nbsp;<strong>{{ c.nz | number:'1.2-2' }}</strong>
-            </div>
+    <!-- Palette de dessin de zones -->
+    @if (zoneDrawMode()) {
+      <div class="zone-palette">
+        <div class="zone-palette__swatches">
+          @for (entry of zoneEntries(); track entry[0]) {
+            <button
+              type="button"
+              class="zone-swatch"
+              [class.zone-swatch--active]="activePaintZoneKey() === entry[0]"
+              [style.--zc]="entry[1]"
+              [title]="entry[0]"
+              (click)="activePaintZoneKey.set(entry[0])"
+            >{{ entry[0] }}</button>
           }
-        }
-      }
-      <div class="cep__hint">Cliquez sur le modèle pour repositionner</div>
-      <div class="cep__actions">
-        <button type="button" class="tb-btn" (click)="copyEditedCentroids()">Copier le code</button>
-        <button type="button" class="tb-btn" (click)="resetCentroids()">Réinitialiser</button>
+        </div>
+        <div class="zone-palette__row">
+          <span class="zone-palette__label">Couleur</span>
+          @if (activePaintZoneKey(); as key) {
+            <input type="color" class="cep__color"
+              [value]="zoneMapService.colors()[key]"
+              (input)="onZoneColorChange(key, $event)" />
+          }
+          <button type="button" class="tb-btn" (click)="resetColors()">Réinit.</button>
+        </div>
+        <div class="zone-palette__row">
+          <span class="zone-palette__label">Pinceau</span>
+          <input type="range" class="tb-slider" min="0.005" max="0.06" step="0.002"
+            [value]="zoneBrushRadius()" (input)="onZoneBrushChange($event)" />
+        </div>
+        <button type="button" class="tb-btn tb-btn--danger zone-palette__clear" (click)="clearZoneMap()">
+          ✕ Effacer la carte
+        </button>
       </div>
-    </div>
-  }
-
-  @if (debugMode() && debugInfo(); as info) {
-    <div class="viewer__debug">
-      <div class="debug__coords">
-        nx&nbsp;<strong>{{ info.nx | number:'1.2-2' }}</strong>
-        &ensp;ny&nbsp;<strong>{{ info.ny | number:'1.2-2' }}</strong>
-        &ensp;nz&nbsp;<strong>{{ info.nz | number:'1.2-2' }}</strong>
-      </div>
-      <ol class="debug__list">
-        @for (c of info.candidates.slice(0, 6); track c.key) {
-          <li class="debug__item" [class.debug__item--winner]="c.key === info.winner">
-            <span class="debug__label">{{ c.label }}</span>
-            <span class="debug__dist">{{ c.dist | number:'1.2-2' }}</span>
-          </li>
-        }
-      </ol>
-    </div>
+    }
   }
 
   <div class="viewer__hint">
-    @if (painData.mode() === "paint") {
+    @if (zoneDrawMode()) {
+      @if (activePaintZoneKey()) {
+        Cliquer et glisser pour peindre la zone · choisir une zone dans la palette
+      } @else {
+        Sélectionnez une zone dans la palette pour commencer à peindre
+      }
+    } @else if (painData.mode() === "paint") {
       Cliquez et glissez sur le corps pour dessiner l'étendue de la douleur
     } @else {
       Glisser pour tourner · Maj+Glisser pour déplacer · Molette pour zoomer

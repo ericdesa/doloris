@@ -25,6 +25,9 @@ interface PaintLayer {
   colorAttr: THREE.Float32BufferAttribute;
   /** Positions monde des sommets pré-calculées (pose de repos = pose affichée). */
   worldPositions: Float32Array;
+  /** Second overlay pour la carte de zones anatomiques (indépendant du calque douleur). */
+  zoneOverlay: THREE.Mesh;
+  zoneColorAttr: THREE.Float32BufferAttribute;
 }
 
 
@@ -46,8 +49,8 @@ export class BodySceneEngine {
 
   private modelRoot: THREE.Object3D | null = null;
   private modelRadius = 1;
+  get currentModelRadius(): number { return this.modelRadius; }
   private modelCenter = new THREE.Vector3();
-  private modelMinY = 0;
 
   private _focusTarget = new THREE.Vector3();
   private _focusCamPos = new THREE.Vector3();
@@ -249,9 +252,42 @@ export class BodySceneEngine {
     }
     mesh.add(overlay);
 
+    // --- Second overlay : carte de zones anatomiques (rendu sous le calque douleur) ---
+    const zoneGeo = new THREE.BufferGeometry();
+    if (overlayGeo.index) zoneGeo.setIndex(overlayGeo.index);
+    zoneGeo.setAttribute('position', overlayGeo.attributes['position']);
+    if (isSkinned) {
+      const si = overlayGeo.attributes['skinIndex'];
+      const sw = overlayGeo.attributes['skinWeight'];
+      if (si) zoneGeo.setAttribute('skinIndex', si);
+      if (sw) zoneGeo.setAttribute('skinWeight', sw);
+    }
+    const zoneColorAttr = new THREE.Float32BufferAttribute(new Float32Array(vCount * 4), 4);
+    zoneGeo.setAttribute('color', zoneColorAttr);
+
+    const zoneMat = new THREE.MeshBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+      side: THREE.DoubleSide,
+    });
+
+    let zoneOverlay: THREE.Mesh;
+    if (mesh instanceof THREE.SkinnedMesh && mesh.skeleton) {
+      const sk = new THREE.SkinnedMesh(zoneGeo, zoneMat);
+      sk.bind(mesh.skeleton, mesh.bindMatrix);
+      zoneOverlay = sk;
+    } else {
+      zoneOverlay = new THREE.Mesh(zoneGeo, zoneMat);
+    }
+    mesh.add(zoneOverlay);
+
     const worldPositions = this.buildWorldPositions(paintPosAttr, mesh.matrixWorld);
     this.raycastTargets.push(mesh);
-    this.paintLayers.set(mesh.name, { mesh, overlay, overlayGeo, colorAttr, worldPositions });
+    this.paintLayers.set(mesh.name, { mesh, overlay, overlayGeo, colorAttr, worldPositions, zoneOverlay, zoneColorAttr });
   }
 
   /**
@@ -331,7 +367,6 @@ export class BodySceneEngine {
     this.modelRadius = radius;
     this.modelCenter.copy(center);
     this.modelSize.copy(size);
-    this.modelMinY = box.min.y;
     this.camera.near = radius / 100;
     this.camera.far  = radius * 1000;
     this.camera.updateProjectionMatrix();
@@ -473,22 +508,127 @@ export class BodySceneEngine {
     };
   }
 
-  normalizePoint(wx: number, wy: number, wz: number) {
-    return {
-      nx: (wx - this.modelCenter.x) / (this.modelSize.x / 2 || 1),
-      ny: (wy - this.modelMinY)     / (this.modelSize.y    || 1),
-      nz: (wz - this.modelCenter.z) / (this.modelSize.z / 2 || 1),
+  /** Affiche ou masque le calque de zone map sans effacer le buffer peint. */
+  setZoneMapVisible(visible: boolean): void {
+    for (const layer of this.paintLayers.values()) {
+      layer.zoneOverlay.visible = visible;
+    }
+  }
+
+  /**
+   * Peint directement la zone map en appliquant une couleur fixe à tous les
+   * sommets du maillage dans le rayon du pinceau.
+   * Contrairement à paintAt, pas de dégradé : couvrance totale dans le rayon.
+   */
+  paintZone(meshName: string, worldPoint: THREE.Vector3, colorHex: string, brushRadius: number): void {
+    const layer = this.paintLayers.get(meshName);
+    if (!layer) return;
+    const { zoneColorAttr, worldPositions } = layer;
+    const worldR = brushRadius * this.modelRadius;
+    const r2 = worldR * worldR;
+    const arr = zoneColorAttr.array as Float32Array;
+    const px = worldPoint.x, py = worldPoint.y, pz = worldPoint.z;
+    const n = zoneColorAttr.count;
+    const r = parseInt(colorHex.slice(1, 3), 16) / 255;
+    const g = parseInt(colorHex.slice(3, 5), 16) / 255;
+    const b = parseInt(colorHex.slice(5, 7), 16) / 255;
+    let dirty = false;
+    for (let i = 0; i < n; i++) {
+      const dx = px - worldPositions[i * 3];
+      const dy = py - worldPositions[i * 3 + 1];
+      const dz = pz - worldPositions[i * 3 + 2];
+      if (dx * dx + dy * dy + dz * dz >= r2) continue;
+      arr[i * 4]     = r;
+      arr[i * 4 + 1] = g;
+      arr[i * 4 + 2] = b;
+      arr[i * 4 + 3] = 0.40;
+      dirty = true;
+    }
+    if (dirty) zoneColorAttr.needsUpdate = true;
+  }
+
+  /** Rejoue une liste de tracés de zone (restauration depuis localStorage). */
+  replayZoneDrags(drags: ReadonlyArray<{
+    meshName: string; colorHex: string; brushRadius: number;
+    points: ReadonlyArray<{ wx: number; wy: number; wz: number }>;
+  }>): void {
+    const v = new THREE.Vector3();
+    for (const drag of drags) {
+      for (const p of drag.points) {
+        this.paintZone(drag.meshName, v.set(p.wx, p.wy, p.wz), drag.colorHex, drag.brushRadius);
+      }
+    }
+  }
+
+  /**
+   * Version optimisée de replayZoneDrags : un seul parcours des sommets par mesh
+   * au lieu de N_points parcours. Les couleurs et rayons sont pré-calculés par drag.
+   * Sémantique identique : last drag wins (les drags sont appliqués dans l'ordre).
+   */
+  replayZoneDragsBatch(drags: ReadonlyArray<{
+    meshName: string; colorHex: string; brushRadius: number;
+    points: ReadonlyArray<{ wx: number; wy: number; wz: number }>;
+  }>): void {
+    type PreparedDrag = {
+      r: number; g: number; b: number; r2: number;
+      points: ReadonlyArray<{ wx: number; wy: number; wz: number }>;
     };
+
+    // Grouper par meshName en conservant l'ordre d'application
+    const byMesh = new Map<string, PreparedDrag[]>();
+    for (const drag of drags) {
+      const worldR = drag.brushRadius * this.modelRadius;
+      const prepared: PreparedDrag = {
+        r:  parseInt(drag.colorHex.slice(1, 3), 16) / 255,
+        g:  parseInt(drag.colorHex.slice(3, 5), 16) / 255,
+        b:  parseInt(drag.colorHex.slice(5, 7), 16) / 255,
+        r2: worldR * worldR,
+        points: drag.points,
+      };
+      const list = byMesh.get(drag.meshName);
+      if (list) list.push(prepared);
+      else byMesh.set(drag.meshName, [prepared]);
+    }
+
+    for (const [meshName, meshDrags] of byMesh) {
+      const layer = this.paintLayers.get(meshName);
+      if (!layer) continue;
+      const { zoneColorAttr, worldPositions } = layer;
+      const arr = zoneColorAttr.array as Float32Array;
+      const n = zoneColorAttr.count;
+      let dirty = false;
+
+      for (let i = 0; i < n; i++) {
+        const vx = worldPositions[i * 3];
+        const vy = worldPositions[i * 3 + 1];
+        const vz = worldPositions[i * 3 + 2];
+
+        for (const d of meshDrags) {
+          for (const p of d.points) {
+            const dx = p.wx - vx, dy = p.wy - vy, dz = p.wz - vz;
+            if (dx * dx + dy * dy + dz * dz < d.r2) {
+              arr[i * 4]     = d.r;
+              arr[i * 4 + 1] = d.g;
+              arr[i * 4 + 2] = d.b;
+              arr[i * 4 + 3] = 0.40;
+              dirty = true;
+              break; // un seul point suffit pour ce drag
+            }
+          }
+        }
+      }
+
+      if (dirty) zoneColorAttr.needsUpdate = true;
+    }
   }
 
-  inferBodyPart(wx: number, wy: number, wz: number): string {
-    const { nx, ny, nz } = this.normalizePoint(wx, wy, wz);
-    return inferBodyPartKey(nx, ny, nz);
-  }
-
-  inferBodyPartDebug(wx: number, wy: number, wz: number) {
-    const { nx, ny, nz } = this.normalizePoint(wx, wy, wz);
-    return inferBodyPartDebug(nx, ny, nz);
+  /** Efface le buffer de zone map (tous les alpha → 0) et masque l'overlay. */
+  clearZoneMap(): void {
+    for (const layer of this.paintLayers.values()) {
+      (layer.zoneColorAttr.array as Float32Array).fill(0);
+      layer.zoneColorAttr.needsUpdate = true;
+      layer.zoneOverlay.visible = false;
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -622,28 +762,6 @@ export class BodySceneEngine {
     this.renderer.setSize(clientWidth, clientHeight);
   }
 
-  getCentroidScreenPositions(
-    centroids: ReadonlyArray<{ key: string; nx: number; ny: number; nz: number }>,
-  ): Array<{ key: string; x: number; y: number }> {
-    const { clientWidth, clientHeight } = this.container;
-    const v = new THREE.Vector3();
-    const result: Array<{ key: string; x: number; y: number }> = [];
-    for (const c of centroids) {
-      v.set(
-        c.nx * (this.modelSize.x / 2) + this.modelCenter.x,
-        c.ny * this.modelSize.y       + this.modelMinY,
-        c.nz * (this.modelSize.z / 2) + this.modelCenter.z,
-      );
-      v.project(this.camera);
-      if (v.z > 1) continue;
-      const x = ( v.x * 0.5 + 0.5) * clientWidth;
-      const y = (-v.y * 0.5 + 0.5) * clientHeight;
-      if (x < -30 || x > clientWidth + 30 || y < -30 || y > clientHeight + 30) continue;
-      result.push({ key: c.key, x, y });
-    }
-    return result;
-  }
-
   private animate = (): void => {
     if (this.disposed) return;
     this.animationFrame = requestAnimationFrame(this.animate);
@@ -673,6 +791,8 @@ export class BodySceneEngine {
     for (const layer of this.paintLayers.values()) {
       layer.overlayGeo.dispose();
       (layer.overlay.material as THREE.Material).dispose();
+      layer.zoneOverlay.geometry.dispose();
+      (layer.zoneOverlay.material as THREE.Material).dispose();
     }
 
     this.scene.traverse((obj) => {
