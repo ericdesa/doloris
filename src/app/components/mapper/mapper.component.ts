@@ -9,7 +9,7 @@ import { PainDataService } from '../../services/pain-data.service';
   selector: 'app-mapper',
   imports: [BodyViewerComponent, ZonePanelComponent],
   templateUrl: './mapper.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './mapper.component.scss',
 })
 export class MapperComponent {

@@ -11,7 +11,7 @@ const COMMENT_KEY = 'pain-mapper:report-comment';
   selector: 'app-report',
   imports: [BodyViewerComponent],
   templateUrl: './report.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './report.component.scss',
 })
 export class ReportComponent {

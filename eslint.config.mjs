@@ -50,7 +50,7 @@ export default tseslint.config(
       '@angular-eslint/template/interactive-supports-focus': 'off',
       '@angular-eslint/template/label-has-associated-control': 'off',
       '@angular-eslint/template/elements-content': 'off',
-      '@angular-eslint/template/no-call-expression': 'warn',
+      '@angular-eslint/template/no-call-expression': 'off',
     },
   },
 );

@@ -7,7 +7,7 @@ import { PainZone } from '../../models/pain-zone.model';
     selector: 'app-zone-panel',
     imports: [],
     templateUrl: './zone-panel.component.html',
-    changeDetection: ChangeDetectionStrategy.Eager,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     styleUrl: './zone-panel.component.scss'
 })
 export class ZonePanelComponent {

@@ -12,7 +12,7 @@ import { ZoneDrag } from '../../models/zone-drag.model';
     selector: 'app-body-viewer',
     imports: [],
     templateUrl: './body-viewer.component.html',
-    changeDetection: ChangeDetectionStrategy.Eager,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     styleUrl: './body-viewer.component.scss'
 })
 export class BodyViewerComponent implements AfterViewInit, OnDestroy {
