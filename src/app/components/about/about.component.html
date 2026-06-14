@@ -1,8 +1,17 @@
 <div class="about">
   <header class="about__nav">
     <button type="button" class="about__back" (click)="back()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="15 18 9 12 15 6"/>
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="15 18 9 12 15 6" />
       </svg>
       Retour
     </button>
@@ -13,45 +22,110 @@
       <span class="about__brand-mark">+</span>
       <h1>Doloris - Cartographie de la douleur</h1>
     </div>
-    
 
     <section class="about__section">
       <div class="about__privacy-badge">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
         </svg>
         <span>100 % privé</span>
       </div>
 
       <h2>Vos données restent sur votre appareil</h2>
       <p>
-        Doloris ne collecte, ne transmet et n'envoie <strong>aucune donnée sur internet</strong>.
-        Tout ce que vous saisissez — zones de douleur, descriptions, intensités — est enregistré
-        uniquement dans le stockage local de votre navigateur (<code>localStorage</code>)
-        et n'en sort jamais.
+        Doloris ne collecte, ne transmet et n'envoie
+        <strong>aucune donnée sur internet</strong>
+        . Tout ce que vous saisissez — zones de douleur, descriptions, intensités — est enregistré uniquement dans le stockage local de
+        votre navigateur (
+        <code>localStorage</code>
+        ) et n'en sort jamais.
       </p>
       <p>
-        Il n'y a pas de compte, pas de serveur, pas de traçage. L'application fonctionne
-        entièrement dans votre navigateur, même hors ligne.
+        Il n'y a pas de compte, pas de serveur, pas de traçage. L'application fonctionne entièrement dans votre navigateur, même hors ligne.
       </p>
       <ul class="about__checklist">
         <li>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
           Aucune connexion réseau requise
         </li>
         <li>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
           Aucun compte ni inscription
         </li>
         <li>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
           Aucun cookie tiers ni traçeur analytique
         </li>
         <li>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
           Données stockées localement, supprimables à tout moment
         </li>
       </ul>
+    </section>
+
+    <section class="about__section">
+      <h2>Les liens de partage sont autonomes</h2>
+      <p>
+        Lorsque vous partagez un rapport,
+        <strong>toutes les données sont encodées directement dans l'URL</strong>
+        (après le
+        <code>#</code>
+        ). Le lien est autosuffisant : aucune donnée n'est stockée sur un serveur, et le destinataire peut consulter le rapport même sans
+        compte.
+      </p>
     </section>
 
     <section class="about__section">
@@ -59,7 +133,8 @@
       <div class="about__credit">
         <p>
           Doloris est un projet open source disponible sur
-          <a href="https://github.com/ericdesa/doloris" target="_blank" rel="noopener">GitHub</a>.
+          <a href="https://github.com/ericdesa/doloris" target="_blank" rel="noopener">GitHub</a>
+          .
         </p>
       </div>
     </section>
@@ -70,20 +145,20 @@
       <div class="about__credit">
         <p>
           Le rendu 3D est réalisé avec
-          <a href="https://threejs.org/" target="_blank" rel="noopener">Three.js</a>,
-          sous licence
-          <a href="https://github.com/mrdoob/three.js/blob/dev/LICENSE" target="_blank" rel="noopener">licence MIT</a>.
+          <a href="https://threejs.org/" target="_blank" rel="noopener">Three.js</a>
+          , sous licence
+          <a href="https://github.com/mrdoob/three.js/blob/dev/LICENSE" target="_blank" rel="noopener">licence MIT</a>
+          .
         </p>
       </div>
 
       <div class="about__credit">
         <p>
           Le modèle 3D du corps masculin est fourni par
-          <a href="https://poly.pizza/m/eWGDnQ0jzmH" target="_blank" rel="noopener">
-            Артур Мигранов
-          </a>
+          <a href="https://poly.pizza/m/eWGDnQ0jzmH" target="_blank" rel="noopener">Артур Мигранов</a>
           sous licence
-          <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">Creative Commons Attribution (CC BY)</a>.
+          <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">Creative Commons Attribution (CC BY)</a>
+          .
         </p>
       </div>
     </section>

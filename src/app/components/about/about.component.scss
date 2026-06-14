@@ -115,6 +115,12 @@ hr {
   font-weight: 600;
   margin-bottom: 14px;
   margin-top: 14px;
+
+  &--share {
+    background: #eef4ff;
+    color: #1e3a6e;
+    border-color: #c5d8f8;
+  }
 }
 
 .about__checklist {
