@@ -14,8 +14,15 @@
   background: #f9fbfc;
 }
 
+.report__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .report__back,
-.report__print {
+.report__print,
+.report__share {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -32,6 +39,61 @@
   &:hover {
     border-color: #5a7a8a;
     color: #1a2228;
+  }
+}
+
+.report__share--copied {
+  color: #2f9e8f;
+  border-color: #2f9e8f;
+}
+
+.report__share:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.share-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 32px;
+  background: #f0f7f9;
+  border-bottom: 1px solid #c8dde4;
+  font-size: 0.875rem;
+  color: #2e3d45;
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  &__load,
+  &__dismiss {
+    padding: 5px 12px;
+    border-radius: 5px;
+    border: 1px solid #dbe5e8;
+    background: #fff;
+    font-size: 0.875rem;
+    font-family: system-ui, sans-serif;
+    cursor: pointer;
+    transition: border-color 0.15s;
+
+    &:hover {
+      border-color: #5a7a8a;
+    }
+  }
+
+  &__load {
+    background: #2e3d45;
+    color: #fff;
+    border-color: #2e3d45;
+
+    &:hover {
+      background: #1a2228;
+      border-color: #1a2228;
+    }
   }
 }
 
@@ -242,11 +304,42 @@ hr {
   margin: 8px 0 0;
 }
 
+.share-footer {
+  margin-top: 36px;
+  padding: 14px 16px;
+  border: 1px solid #dbe5e8;
+  border-radius: 6px;
+  background: #f9fbfc;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &__label {
+    font-size: 0.78rem;
+    color: #8a9da5;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__url {
+    font-size: 0.8rem;
+    color: #2e3d45;
+    word-break: break-all;
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover {
+      color: #2f9e8f;
+      text-decoration: underline;
+    }
+  }
+}
+
 .footer {
   font-size: 0.8rem;
   color: #8a9da5;
   text-align: center;
-  margin-top: 48px;
+  margin-top: 24px;
 }
 
 .hidden-viewer {

@@ -16,26 +16,50 @@
       Retour
     </button>
 
-    <button type="button" class="report__print" (click)="print()">
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+    <div class="report__actions">
+      <button
+        type="button"
+        class="report__share"
+        [class.report__share--copied]="copied()"
+        [disabled]="zones().length === 0"
+        (click)="copyShareLink()"
       >
-        <polyline points="6 9 6 2 18 2 18 9" />
-        <path
-          d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"
-        />
-        <rect x="6" y="14" width="12" height="8" />
-      </svg>
-      Imprimer
-    </button>
+        @if (copied()) {
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          Lien copié !
+        } @else {
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+          Créer un lien de partage
+        }
+      </button>
+
+      <button type="button" class="report__print" (click)="print()">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="6 9 6 2 18 2 18 9" />
+          <path
+            d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"
+          />
+          <rect x="6" y="14" width="12" height="8" />
+        </svg>
+        Imprimer
+      </button>
+    </div>
   </header>
+
 
   <main class="report__body">
     <div class="report__logo">
@@ -121,8 +145,6 @@
         </div>
       </div>
     }
-
-    <p class="footer">Document généré par Doloris</p>
   </main>
 </div>
 

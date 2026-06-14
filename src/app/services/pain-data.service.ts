@@ -181,10 +181,14 @@ export class PainDataService {
   importJson(json: string): void {
     const parsed = JSON.parse(json) as { zones: PainZone[] };
     if (Array.isArray(parsed.zones)) {
-      this.zones.set(parsed.zones);
-      this.selectedZoneId.set(null);
-      this.redrawTick.update((n) => n + 1);
+      this.loadZones(parsed.zones);
     }
+  }
+
+  loadZones(zones: PainZone[]): void {
+    this.zones.set(zones);
+    this.selectedZoneId.set(null);
+    this.redrawTick.update((n) => n + 1);
   }
 
   /** Images capturées depuis le viewer 3D, transmises à la page rapport. */

@@ -1,7 +1,8 @@
-import { Component, ChangeDetectionStrategy, inject, signal, effect } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, effect } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { PainDataService } from '../../services/pain-data.service';
+import { ShareService } from '../../services/share.service';
 import { getPainType } from '../../models/pain-types';
 import { BodyViewerComponent } from '../body-viewer/body-viewer.component';
 
@@ -17,6 +18,7 @@ const COMMENT_KEY = 'pain-mapper:report-comment';
 export class ReportComponent {
   readonly painData = inject(PainDataService);
   private readonly router = inject(Router);
+  private readonly share = inject(ShareService);
 
   readonly zones = this.painData.zones;
   readonly today = new Date().toLocaleDateString('fr-FR', {
@@ -30,7 +32,18 @@ export class ReportComponent {
   readonly showViewer = signal(false);
   readonly overviewImages = this.painData.overviewImages;
 
+  readonly copied = signal(false);
+  readonly shareUrl = computed(() => this.zones().length > 0 ? this.share.getShareUrl(this.zones()) : null);
+
   constructor() {
+    const shared = this.share.extractFromFragment();
+    if (shared) {
+      this.painData.loadZones(shared);
+      this.painData.reportImages.set(new Map());
+      this.painData.overviewImages.set(null);
+      this.share.clearFragment();
+    }
+
     const needsZones = this.painData.reportImages().size === 0 && this.painData.zones().length > 0;
     const needsOverview = !this.painData.overviewImages();
     if (needsZones || needsOverview) {
@@ -78,4 +91,12 @@ export class ReportComponent {
   print(): void {
     window.print();
   }
+
+  async copyShareLink(): Promise<void> {
+    const url = this.share.getShareUrl(this.zones());
+    await navigator.clipboard.writeText(url);
+    this.copied.set(true);
+    setTimeout(() => this.copied.set(false), 2000);
+  }
+
 }
