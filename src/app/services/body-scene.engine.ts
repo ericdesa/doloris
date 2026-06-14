@@ -460,46 +460,57 @@ export class BodySceneEngine {
     layer: PaintLayer,
     points: UvPoint[]
   ): { worldPos: THREE.Vector3; dir: THREE.Vector3 } | null {
-    const uvAttr  = layer.mesh.geometry.attributes['uv']       as THREE.BufferAttribute | undefined;
-    const posAttr = layer.mesh.geometry.attributes['position'] as THREE.BufferAttribute | undefined;
-    if (!uvAttr || !posAttr) return null;
-
-    const avgU = points.reduce((s, p) => s + p.u, 0) / points.length;
-    const avgV = points.reduce((s, p) => s + p.v, 0) / points.length;
-    let maxR2 = 0;
-    for (const p of points) {
-      const r2 = (p.u-avgU)**2 + (p.v-avgV)**2;
-      if (r2 > maxR2) maxR2 = r2;
-    }
-    const searchR2 = Math.max(maxR2 * 2.25, 0.004);
-
-    let closestIdx = 0, closestDist = Infinity;
-    for (let i = 0; i < uvAttr.count; i++) {
-      const d = (uvAttr.getX(i)-avgU)**2 + (uvAttr.getY(i)-avgV)**2;
-      if (d < closestDist) { closestDist = d; closestIdx = i; }
-    }
-
-    const worldPos = new THREE.Vector3(
-      posAttr.getX(closestIdx), posAttr.getY(closestIdx), posAttr.getZ(closestIdx)
-    ).applyMatrix4(layer.mesh.matrixWorld);
-
     const normAttr = layer.mesh.geometry.attributes['normal'] as THREE.BufferAttribute | undefined;
-    let dir: THREE.Vector3;
-    if (normAttr) {
-      const avg = new THREE.Vector3();
-      let count = 0;
-      for (let i = 0; i < uvAttr.count; i++) {
-        if ((uvAttr.getX(i)-avgU)**2 + (uvAttr.getY(i)-avgV)**2 <= searchR2) {
-          avg.x += normAttr.getX(i); avg.y += normAttr.getY(i); avg.z += normAttr.getZ(i);
-          count++;
-        }
-      }
-      dir = count > 0
-        ? avg.divideScalar(count).transformDirection(layer.mesh.matrixWorld).normalize()
-        : worldPos.clone().sub(this.modelCenter).normalize();
+
+    // Use wx/wy/wz (raycast world positions) when available — more reliable
+    // than UV-centroid lookup which can land on the wrong side of the mesh
+    // (e.g. palm vs. back-of-hand share adjacent UV regions).
+    const ptsW = points.filter(p => p.wx !== undefined);
+    let worldPos: THREE.Vector3;
+    if (ptsW.length > 0) {
+      worldPos = new THREE.Vector3();
+      for (const p of ptsW) worldPos.x += p.wx!, worldPos.y += p.wy!, worldPos.z += p.wz!;
+      worldPos.divideScalar(ptsW.length);
     } else {
-      dir = worldPos.clone().sub(this.modelCenter).normalize();
+      const uvAttr  = layer.mesh.geometry.attributes['uv']       as THREE.BufferAttribute | undefined;
+      const posAttr = layer.mesh.geometry.attributes['position'] as THREE.BufferAttribute | undefined;
+      if (!uvAttr || !posAttr) return null;
+      const avgU = points.reduce((s, p) => s + p.u, 0) / points.length;
+      const avgV = points.reduce((s, p) => s + p.v, 0) / points.length;
+      let closestIdx = 0, closestDist = Infinity;
+      for (let i = 0; i < uvAttr.count; i++) {
+        const d = (uvAttr.getX(i)-avgU)**2 + (uvAttr.getY(i)-avgV)**2;
+        if (d < closestDist) { closestDist = d; closestIdx = i; }
+      }
+      worldPos = new THREE.Vector3(
+        posAttr.getX(closestIdx), posAttr.getY(closestIdx), posAttr.getZ(closestIdx)
+      ).applyMatrix4(layer.mesh.matrixWorld);
     }
+
+    if (!normAttr) return { worldPos, dir: worldPos.clone().sub(this.modelCenter).normalize() };
+
+    // Average normals of vertices that are close in world space (not UV space)
+    // so palm and back-of-hand are naturally separated.
+    const wp = layer.worldPositions;
+    let minDist2 = Infinity;
+    for (let i = 0, n = normAttr.count; i < n; i++) {
+      const dx = wp[i*3]-worldPos.x, dy = wp[i*3+1]-worldPos.y, dz = wp[i*3+2]-worldPos.z;
+      const d2 = dx*dx + dy*dy + dz*dz;
+      if (d2 < minDist2) minDist2 = d2;
+    }
+    const searchR2 = Math.max(minDist2 * 16, 1e-6);
+    const avg = new THREE.Vector3();
+    let count = 0;
+    for (let i = 0, n = normAttr.count; i < n; i++) {
+      const dx = wp[i*3]-worldPos.x, dy = wp[i*3+1]-worldPos.y, dz = wp[i*3+2]-worldPos.z;
+      if (dx*dx + dy*dy + dz*dz <= searchR2) {
+        avg.x += normAttr.getX(i); avg.y += normAttr.getY(i); avg.z += normAttr.getZ(i);
+        count++;
+      }
+    }
+    const dir = count > 0
+      ? avg.divideScalar(count).transformDirection(layer.mesh.matrixWorld).normalize()
+      : worldPos.clone().sub(this.modelCenter).normalize();
     return { worldPos, dir };
   }
 
