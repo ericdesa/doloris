@@ -717,11 +717,11 @@ export class BodySceneEngine {
 
       const base = i * 4;
       const existA = arr[base + 3];
-      const newA   = existA + strokeA * (1 - existA);
+      const newA   = strokeA + existA * (1 - strokeA);
       if (newA < 0.001) continue;
 
-      // Compositing "over"
-      const blend = strokeA * (1 - existA) / newA;
+      // Compositing "new over existing" — le dernier trait dessiné passe au-dessus
+      const blend = strokeA / newA;
       arr[base]   += (pr - arr[base])   * blend;
       arr[base+1] += (pg - arr[base+1]) * blend;
       arr[base+2] += (pb - arr[base+2]) * blend;
