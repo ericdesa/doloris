@@ -95,6 +95,8 @@
               [src]="getImage(zone.id)"
               [alt]="'Capture de la zone ' + zone.bodyPartLabel"
             />
+          } @else if (showViewer()) {
+            <div class="zone-img zone-img--loading"></div>
           }
         </div>
       </div>
@@ -103,3 +105,9 @@
     <p class="footer">Document généré par Doloris</p>
   </main>
 </div>
+
+@if (showViewer()) {
+  <div class="hidden-viewer" aria-hidden="true">
+    <app-body-viewer />
+  </div>
+}

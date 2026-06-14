@@ -214,6 +214,28 @@ hr {
   margin-top: 48px;
 }
 
+.hidden-viewer {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 400px;
+  height: 600px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.zone-img--loading {
+  background: #eef2f4;
+  border-radius: 6px;
+  border: 1px solid #dbe5e8;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 @media print {
   .no-print {
     display: none !important;

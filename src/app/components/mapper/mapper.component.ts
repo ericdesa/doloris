@@ -24,7 +24,7 @@ export class MapperComponent {
     const zones = this.painData.zones();
     if (!zones.length) return;
     const images = new Map<string, string>();
-    const capture = this.painData.captureZone;
+    const capture = this.painData.captureZone();
     if (capture) {
       for (const zone of zones) {
         const img = capture(zone.meshName, zone.points);

@@ -17,7 +17,7 @@ export class PainDataService {
   readonly zones = signal<PainZone[]>([]);
 
   /** Injecté par BodyViewerComponent après init du moteur 3D. */
-  captureZone: ((meshName: string, points: UvPoint[]) => string) | null = null;
+  readonly captureZone = signal<((meshName: string, points: UvPoint[]) => string) | null>(null);
 
   /** Mode d'interaction avec le modèle 3D : dessiner ou sélectionner/éditer. */
   readonly mode = signal<InteractionMode>('paint');
