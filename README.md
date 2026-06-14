@@ -1,74 +1,41 @@
-# Cartographie de la douleur
+# Doloris
 
-Application Angular permettant à un patient de **dessiner librement, sur un
-modèle 3D du corps humain**, les zones où il ressent de la douleur, puis
-d'associer à chaque zone :
+**Décrivez votre douleur. Montrez-la à votre médecin.**
 
-- un **type de douleur** (code couleur : brûlure, décharge, picotement,
-  douleur sourde, crampe, engourdissement, pression, autre) ;
-- une **intensité** de 1 à 10 ;
-- des **caractéristiques** complémentaires (constante, intermittente,
-  irradiante, aggravée la nuit...) ;
-- des **notes libres**.
+Doloris permet de localiser et documenter des douleurs sur un modèle 3D du corps humain, puis de générer un compte-rendu clair à apporter en consultation.
 
-L'ensemble peut être exporté en compte-rendu texte ou en JSON, pour être
-transmis à un médecin.
+Aucun compte, aucun serveur, aucune installation — l'application s'ouvre dans le navigateur et toutes les données restent sur votre appareil.
 
-## Démarrage
+**[Ouvrir l'app](https://ericdesa.github.io/doloris/)**
 
-```bash
-npm install
-npm start
-```
+---
 
-L'application est servie sur `http://localhost:4200`.
+## Comment ça marche
 
-## Modèle 3D
+**1. Dessinez vos zones douloureuses**
+Cliquez et faites glisser sur le modèle 3D pour marquer les endroits où vous avez mal. Faites pivoter le corps pour accéder au dos, aux membres, partout où c'est nécessaire.
 
-Par défaut, l'application génère un **corps humain simplifié** (formes
-géométriques de base) qui supporte déjà l'intégralité des fonctionnalités :
-dessin libre, sélection, édition, export.
+**2. Décrivez chaque zone**
+Pour chaque zone, précisez :
+- le type de douleur (brûlure, décharge, picotement, crampe, pression...)
+- l'intensité, de 1 à 10
+- les circonstances (constante, la nuit, aggravée par le mouvement, irradiante...)
+- des notes libres
 
-Pour afficher un **modèle anatomique réaliste**, déposez un fichier
-`body.glb` dans `src/assets/models/` — voir
-[`src/assets/models/README.md`](src/assets/models/README.md) pour le détail
-(format attendu, correspondance des noms de parties du corps).
+**3. Générez un compte-rendu**
+En un clic, obtenez un document structuré avec les vues du corps annoté, le détail de chaque zone et vos observations. Imprimez-le ou exportez-le en PDF pour l'apporter en consultation.
 
-## Fonctionnement (aperçu technique)
+**4. Partagez si besoin**
+Un lien de partage peut être généré et envoyé directement à votre médecin. Aucun fichier à joindre — toutes les informations sont contenues dans le lien.
 
-- **Dessin libre sur le modèle 3D** : chaque maillage peignable reçoit un
-  calque transparent dont la texture est un `<canvas>` 2D. Un raycast
-  Three.js convertit la position du pointeur en coordonnées UV, sur
-  lesquelles le tracé est peint en temps réel
-  (`src/app/services/body-scene.engine.ts`).
-- **Données des zones** : chaque tracé est enregistré comme une `PainZone`
-  (type, intensité, caractéristiques, notes, points UV) via un service à
-  base de signals Angular (`src/app/services/pain-data.service.ts`), sans
-  dépendance externe de gestion d'état.
-- **Deux modes d'interaction** : « Dessiner » pour créer une nouvelle zone,
-  « Sélectionner » pour cliquer une zone existante et l'éditer ou la
-  supprimer.
+---
 
-## Structure du projet
+## Plusieurs situations, plusieurs projets
 
-```
-src/app/
-├── models/                  # Types de douleur, modèle de zone, libellés des parties du corps
-├── services/
-│   ├── pain-data.service.ts   # État applicatif (signals) : zones, mode, export, compte-rendu
-│   ├── body-scene.engine.ts   # Scène Three.js, chargement du modèle, peinture des textures
-│   ├── fallback-body.ts       # Corps simplifié généré si aucun .glb n'est fourni
-│   └── geometry.utils.ts       # Conversion couleur, détection de zone sous le curseur
-├── components/
-│   ├── body-viewer/          # Visualiseur 3D (interaction pointeur)
-│   ├── tool-panel/           # Choix du type, intensité, caractéristiques, notes
-│   └── zone-panel/            # Liste des zones, édition détaillée, export
-└── shared/                    # Styles partagés entre panneaux latéraux
-```
+Créez autant de projets que nécessaire : un par type de douleur, un par consultation, un pour suivre l'évolution dans le temps. Chaque projet est conservé indépendamment sur votre appareil.
 
-## Personnalisation
+---
 
-- **Couleurs et typographies** : `src/styles.scss` (variables CSS) et
-  `src/app/models/pain-types.ts` (couleurs par type de douleur).
-- **Caractéristiques proposées** : `PAIN_CHARACTERISTICS` dans
-  `src/app/models/pain-types.ts`.
+## Vie privée
+
+Doloris ne collecte aucune donnée. Tout reste dans votre navigateur — rien n'est envoyé à l'extérieur, ni lors de l'utilisation, ni lors du partage.
