@@ -54,11 +54,18 @@ export class PainDataService {
 
   readonly zoneCount = computed(() => this.zones().length);
 
+  private _skipStorageLoad = false;
+  private _skipPersist = false;
+
   constructor() {
     // Charge les zones à chaque changement de projet
     effect(() => {
       const key = this.storageKey();
       untracked(() => {
+        if (this._skipStorageLoad) {
+          this._skipStorageLoad = false;
+          return;
+        }
         this.loadFromStorage(key);
         this.selectedZoneId.set(null);
         this.redrawTick.update((n) => n + 1);
@@ -67,7 +74,17 @@ export class PainDataService {
       });
     });
     // Persiste les zones à chaque modification
-    effect(() => this.persist(this.storageKey(), this.zones()));
+    effect(() => {
+      const key = this.storageKey();
+      const zones = this.zones();
+      untracked(() => {
+        if (this._skipPersist) {
+          this._skipPersist = false;
+          return;
+        }
+        this.persist(key, zones);
+      });
+    });
   }
 
   // ---------------------------------------------------------------------
@@ -204,6 +221,16 @@ export class PainDataService {
     this.zones.set(zones);
     this.selectedZoneId.set(null);
     this.redrawTick.update((n) => n + 1);
+  }
+
+  loadSharedZones(zones: PainZone[]): void {
+    this._skipStorageLoad = true;
+    this._skipPersist = true;
+    this.zones.set(zones);
+    this.selectedZoneId.set(null);
+    this.redrawTick.update((n) => n + 1);
+    this.reportImages.set(new Map());
+    this.overviewImages.set(null);
   }
 
   /** Images capturées depuis le viewer 3D, transmises à la page rapport. */

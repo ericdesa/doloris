@@ -38,6 +38,7 @@ export class ReportComponent {
 
   readonly copied = signal(false);
   readonly shareUrl = computed(() => this.zones().length > 0 ? this.share.getShareUrl(this.zones()) : null);
+  readonly isSharedReport = signal(false);
 
   constructor() {
     effect(() => {
@@ -47,9 +48,8 @@ export class ReportComponent {
 
     const shared = this.share.extractFromFragment();
     if (shared) {
-      this.painData.loadZones(shared);
-      this.painData.reportImages.set(new Map());
-      this.painData.overviewImages.set(null);
+      this.isSharedReport.set(true);
+      this.painData.loadSharedZones(shared);
       this.share.clearFragment();
     }
 
@@ -91,6 +91,15 @@ export class ReportComponent {
 
   getImage(zoneId: string): string | undefined {
     return this.painData.reportImages().get(zoneId);
+  }
+
+  saveSharedToProject(): void {
+    this.painData.save();
+    this.isSharedReport.set(false);
+  }
+
+  dismissSharedBanner(): void {
+    this.isSharedReport.set(false);
   }
 
   back(): void {

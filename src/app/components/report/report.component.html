@@ -60,6 +60,19 @@
     </div>
   </header>
 
+  @if (isSharedReport()) {
+    <div class="share-notice no-print">
+      <span>Vous consultez un rapport partagé. Ces données ne sont pas enregistrées dans votre projet actuel.</span>
+      <div class="share-notice__actions">
+        <button type="button" class="share-notice__load" (click)="saveSharedToProject()">
+          Sauvegarder dans mon projet
+        </button>
+        <button type="button" class="share-notice__dismiss" (click)="dismissSharedBanner()">
+          Ignorer
+        </button>
+      </div>
+    </div>
+  }
 
   <main class="report__body">
     <div class="report__logo">
