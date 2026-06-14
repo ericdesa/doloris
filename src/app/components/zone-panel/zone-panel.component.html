@@ -18,12 +18,12 @@
       </p>
     } @else {
       <ul class="zone-list">
-        @for (zone of zonesNewestFirst(); track zone.id) {
-          <li class="zone-list__item" [class.zone-list__item--active]="painData.selectedZoneId() === zone.id">
+        @for (zone of zonesNewestFirst(); track zone.id; let i = $index) {
+          @let zoneNumber = painData.zoneCount() - i;
+          <li class="zone-list__item" [class.zone-list__item--active]="painData.selectedZoneId() === zone.id" [style.--zone-color]="getPainType(zone.type).color">
             <button type="button" class="zone-list__summary" (click)="selectZone(zone)">
-              <span class="zone-list__swatch" [style.background]="getPainType(zone.type).color"></span>
               <span class="zone-list__info">
-                <strong>{{ zone.bodyPartLabel }}</strong>
+                <strong><span class="zone-list__number">{{ zoneNumber }}</span> {{ zone.bodyPartLabel }}</strong>
                 <small>{{ getPainType(zone.type).label }} · intensité {{ zone.intensity }}/10</small>
               </span>
               <span class="zone-list__chevron">{{ painData.selectedZoneId() === zone.id ? '−' : '+' }}</span>

@@ -131,9 +131,11 @@ hr {
 .zone {
   margin-bottom: 20px;
   padding: 14px 16px;
-  border-left: 4px solid #ccc;
+  border-radius: 5px;
+  border: 1px solid;
+  border-left: 5px solid;
   background: #f9fbfc;
-  border-radius: 0 6px 6px 0;
+  overflow: hidden;
 }
 
 .zone-body {
@@ -166,6 +168,23 @@ hr {
   }
 }
 
+.zone-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  background: #2e3d45;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: system-ui, sans-serif;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
 .zone-name {
   font-weight: bold;
   font-size: 1rem;
@@ -179,14 +198,6 @@ hr {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.swatch {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex: none;
 }
 
 .notes {

@@ -34,13 +34,15 @@
 
 .zone-list__item {
   border: 1px solid var(--color-border);
+  border-left: 3px solid var(--zone-color);
   border-radius: var(--radius-sm);
   background: var(--color-surface-alt);
   overflow: hidden;
   transition: border-color 0.15s ease;
 
   &--active {
-    border-color: var(--color-primary);
+    border-color: var(--zone-color);
+    border-left-color: var(--zone-color);
   }
 }
 
@@ -58,11 +60,22 @@
   color: var(--color-ink);
 }
 
-.zone-list__swatch {
-  flex: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
+.zone-list__number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  vertical-align: middle;
+  margin-right: 2px;
 }
 
 .zone-list__info {
@@ -97,6 +110,10 @@
   flex-direction: column;
   gap: 12px;
   border-top: 1px solid var(--color-border);
+
+  .slider {
+    accent-color: var(--zone-color);
+  }
 }
 
 .zone-detail__field {

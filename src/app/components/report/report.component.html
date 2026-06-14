@@ -41,17 +41,14 @@
     <div class="report__logo">
       <span class="report__brand-mark">+</span>
       <div>
-
         <h1>Doloris - Cartographie de la douleur</h1>
-
-    <div class="subtitle">
-      Compte-rendu généré le {{ today }} - {{ zones().length }} zone{{
-        zones().length > 1 ? "s" : ""
-      }}
-      renseignée{{ zones().length > 1 ? "s" : "" }}
-    </div>
+        <div class="subtitle">
+          Compte-rendu généré le {{ today }} - {{ zones().length }} zone{{
+            zones().length > 1 ? "s" : ""
+          }}
+          renseignée{{ zones().length > 1 ? "s" : "" }}
+        </div>
       </div>
-
     </div>
 
     <div class="comment no-print">
@@ -71,14 +68,13 @@
 
     <hr />
 
-    @for (zone of zones(); track zone.id) {
+    @for (zone of zones(); track zone.id; let i = $index) {
       @let type = getPainType(zone.type);
-      <div class="zone" [style.border-left-color]="type.color">
+      <div class="zone" [style.border-color]="type.color">
         <div class="zone-body">
           <div class="zone-info">
-            <p class="zone-name">{{ zone.bodyPartLabel }}</p>
+            <p class="zone-name"><span class="zone-number">{{ i + 1 }}</span> {{ zone.bodyPartLabel }}</p>
             <p class="row">
-              <span class="swatch" [style.background]="type.color"></span>
               {{ type.label }} — {{ type.description }}
             </p>
             <p class="row">
