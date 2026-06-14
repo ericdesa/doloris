@@ -1,7 +1,6 @@
 <div class="app">
   <header class="app__header">
     <div class="app__brand">
-      <span class="app__brand-mark">+</span>
       <div>
         <h1>Doloris - Cartographie de la douleur</h1>
         <p>Indiquez sur le modèle 3D où vous avez mal, et décrivez chaque zone.</p>
@@ -48,8 +47,103 @@
       </button>
 
       <app-project-switcher />
+
+      <button
+        type="button"
+        class="app__action app__action--zones-toggle"
+        (click)="toggleZonesDrawer()"
+        title="Zones de douleur"
+        aria-label="Zones de douleur"
+      >
+        <!-- List icon -->
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="8" y1="6" x2="21" y2="6" />
+          <line x1="8" y1="12" x2="21" y2="12" />
+          <line x1="8" y1="18" x2="21" y2="18" />
+          <line x1="3" y1="6" x2="3.01" y2="6" />
+          <line x1="3" y1="12" x2="3.01" y2="12" />
+          <line x1="3" y1="18" x2="3.01" y2="18" />
+        </svg>
+        @if (painData.zoneCount() > 0) {
+          <span class="app__action-badge">{{ painData.zoneCount() }}</span>
+        }
+      </button>
     </div>
   </header>
+
+  @if (zonesDrawerOpen()) {
+    <div class="zones-drawer-overlay" (click)="closeZonesDrawer()"></div>
+    <div class="zones-drawer">
+      <div class="zones-drawer__header">
+        <span>Menu</span>
+        <button type="button" class="zones-drawer__close" (click)="closeZonesDrawer()" aria-label="Fermer">✕</button>
+      </div>
+
+      <nav class="zones-drawer__nav">
+        <div class="zones-drawer__nav-item zones-drawer__nav-item--switcher">
+          <app-project-switcher />
+        </div>
+
+        <button
+          type="button"
+          class="zones-drawer__nav-item"
+          (click)="openReport(); closeZonesDrawer()"
+          [disabled]="painData.zoneCount() === 0"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <line x1="10" y1="9" x2="8" y2="9" />
+          </svg>
+          Compte-rendu
+        </button>
+        
+        <button type="button" class="zones-drawer__nav-item" (click)="openAbout(); closeZonesDrawer()">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+          À propos
+        </button>
+      </nav>
+
+      <div class="zones-drawer__separator"></div>
+
+      <div class="zones-drawer__body">
+        <app-zone-panel />
+      </div>
+    </div>
+  }
 
   <main class="app__layout">
     <section class="app__column app__column--viewer">

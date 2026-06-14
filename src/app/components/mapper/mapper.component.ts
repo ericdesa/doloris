@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { BodyViewerComponent } from '../body-viewer/body-viewer.component';
@@ -16,6 +16,15 @@ import { PainDataService } from '../../services/pain-data.service';
 export class MapperComponent {
   readonly painData = inject(PainDataService);
   private readonly router = inject(Router);
+  readonly zonesDrawerOpen = signal(false);
+
+  toggleZonesDrawer(): void {
+    this.zonesDrawerOpen.update(v => !v);
+  }
+
+  closeZonesDrawer(): void {
+    this.zonesDrawerOpen.set(false);
+  }
 
   openAbout(): void {
     this.router.navigate(['/about']);
