@@ -514,6 +514,36 @@ export class BodySceneEngine {
     this._focusActive = true;
   }
 
+  captureOverview(side: 'front' | 'back'): string {
+    if (this.disposed) return '';
+    const savedPos    = this.camera.position.clone();
+    const savedTarget = this.controls.target.clone();
+    const savedFocus  = this._focusActive;
+    this._focusActive = false;
+
+    const vFov = (this.camera.fov * Math.PI) / 180;
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * this.camera.aspect);
+    const distV = (this.modelSize.y / 2) / Math.tan(vFov / 2);
+    const distH = (this.modelSize.x / 2) / Math.tan(hFov / 2);
+    const dist  = Math.max(distV, distH, this.modelRadius) * 1.25;
+
+    const zOffset = side === 'front' ? dist : -dist;
+    this.camera.position.set(this.modelCenter.x, this.modelCenter.y, this.modelCenter.z + zOffset);
+    this.controls.target.copy(this.modelCenter);
+    this.controls.update();
+
+    this.renderer.render(this.scene, this.camera);
+    const dataUrl = this.renderer.domElement.toDataURL('image/jpeg', 0.85);
+
+    this._focusActive = savedFocus;
+    this.camera.position.copy(savedPos);
+    this.controls.target.copy(savedTarget);
+    this.controls.update();
+    this.renderer.render(this.scene, this.camera);
+
+    return dataUrl;
+  }
+
   captureZone(meshName: string, points: UvPoint[]): string {
     if (!points.length || this.disposed) return '';
     const layer = this.paintLayers.get(meshName);

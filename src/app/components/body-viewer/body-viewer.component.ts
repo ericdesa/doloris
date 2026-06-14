@@ -101,6 +101,7 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
 
       this.engine.redrawAll(this.painData.zones());
       this.painData.captureZone.set((m, p) => this.engine!.captureZone(m, p));
+      this.painData.captureOverview.set((side) => this.engine!.captureOverview(side));
     } catch (err) {
       console.error('[doloris] Erreur critique au chargement:', err);
     } finally {
@@ -111,6 +112,7 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.painData.captureZone.set(null);
+    this.painData.captureOverview.set(null);
     this.engine?.dispose();
   }
 

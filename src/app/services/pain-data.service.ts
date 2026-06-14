@@ -19,6 +19,12 @@ export class PainDataService {
   /** Injecté par BodyViewerComponent après init du moteur 3D. */
   readonly captureZone = signal<((meshName: string, points: UvPoint[]) => string) | null>(null);
 
+  /** Injecté par BodyViewerComponent après init du moteur 3D. */
+  readonly captureOverview = signal<((side: 'front' | 'back') => string) | null>(null);
+
+  /** Images de vue d'ensemble face/dos pour la page rapport. */
+  readonly overviewImages = signal<{ front: string; back: string } | null>(null);
+
   /** Mode d'interaction avec le modèle 3D : dessiner ou sélectionner/éditer. */
   readonly mode = signal<InteractionMode>('paint');
 

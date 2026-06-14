@@ -66,6 +66,26 @@
       </blockquote>
     }
 
+    @if (overviewImages()) {
+      <div class="overview">
+        <div class="overview__view">
+          <img class="overview__img" [src]="overviewImages()!.front" alt="Vue de face" />
+        </div>
+        <div class="overview__view">
+          <img class="overview__img" [src]="overviewImages()!.back" alt="Vue de dos" />
+        </div>
+      </div>
+    } @else if (showViewer()) {
+      <div class="overview overview--loading">
+        <div class="overview__view">
+          <div class="overview__img overview__img--loading"></div>
+        </div>
+        <div class="overview__view">
+          <div class="overview__img overview__img--loading"></div>
+        </div>
+      </div>
+    }
+
     <hr />
 
     @for (zone of zones(); track zone.id; let i = $index) {

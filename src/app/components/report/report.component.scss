@@ -128,6 +128,40 @@ hr {
   margin: 36px 0;
 }
 
+.overview {
+  display: flex;
+  gap: 16px;
+  margin: 28px 0;
+
+  &__view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__img {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #dbe5e8;
+    background: #f6f9fa;
+
+    &--loading {
+      background: #eef2f4;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+  }
+
+  &__label {
+    font-size: 0.8rem;
+    color: #5a6b73;
+    font-style: italic;
+  }
+}
+
 .zone {
   margin-bottom: 20px;
   padding: 14px 16px;
@@ -160,6 +194,7 @@ hr {
   object-fit: cover;
   border-radius: 6px;
   border: 1px solid #dbe5e8;
+  background-color: #f6f9fa;
 
   @media (max-width: 600px) {
     width: 100%;
@@ -253,12 +288,8 @@ hr {
     background: #fff;
   }
 
-  .zone-body {
-    flex-direction: column;
-  }
-
   .zone-img {
-    width: 100%;
+    // width: 100%;
     height: auto;
     max-height: 220px;
   }

@@ -28,21 +28,36 @@ export class ReportComponent {
   readonly comment = signal<string>(localStorage.getItem(COMMENT_KEY) ?? '');
 
   readonly showViewer = signal(false);
+  readonly overviewImages = this.painData.overviewImages;
 
   constructor() {
-    if (this.painData.reportImages().size === 0 && this.painData.zones().length > 0) {
+    const needsZones = this.painData.reportImages().size === 0 && this.painData.zones().length > 0;
+    const needsOverview = !this.painData.overviewImages();
+    if (needsZones || needsOverview) {
       this.showViewer.set(true);
     }
 
     effect(() => {
-      const capture = this.painData.captureZone();
-      if (!capture || !this.showViewer()) return;
-      const images = new Map<string, string>();
-      for (const zone of this.painData.zones()) {
-        const img = capture(zone.meshName, zone.points);
-        if (img) images.set(zone.id, img);
+      const captureZone = this.painData.captureZone();
+      const captureOverview = this.painData.captureOverview();
+      if ((!captureZone && !captureOverview) || !this.showViewer()) return;
+
+      if (captureZone && this.painData.zones().length > 0) {
+        const images = new Map<string, string>();
+        for (const zone of this.painData.zones()) {
+          const img = captureZone(zone.meshName, zone.points);
+          if (img) images.set(zone.id, img);
+        }
+        this.painData.reportImages.set(images);
       }
-      this.painData.reportImages.set(images);
+
+      if (captureOverview) {
+        this.painData.overviewImages.set({
+          front: captureOverview('front'),
+          back: captureOverview('back'),
+        });
+      }
+
       this.showViewer.set(false);
     });
   }
