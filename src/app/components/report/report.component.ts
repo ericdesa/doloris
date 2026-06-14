@@ -1,8 +1,10 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { PainDataService } from '../../services/pain-data.service';
 import { getPainType } from '../../models/pain-types';
+
+const COMMENT_KEY = 'pain-mapper:report-comment';
 
 @Component({
   selector: 'app-report',
@@ -20,6 +22,13 @@ export class ReportComponent {
   });
 
   readonly getPainType = getPainType;
+
+  readonly comment = signal<string>(localStorage.getItem(COMMENT_KEY) ?? '');
+
+  onCommentChange(value: string): void {
+    this.comment.set(value);
+    localStorage.setItem(COMMENT_KEY, value);
+  }
 
   getImage(zoneId: string): string | undefined {
     return this.painData.reportImages().get(zoneId);
