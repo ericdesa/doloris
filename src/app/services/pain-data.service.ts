@@ -1,5 +1,6 @@
-import { Injectable, computed, effect, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { PainZone, PainZoneDraft, UvPoint, createDefaultDraft } from '../models/pain-zone.model';
+import { ProjectService } from './project.service';
 
 export type InteractionMode = 'paint' | 'select';
 
@@ -9,10 +10,10 @@ function nextId(): string {
   return `zone-${Date.now()}-${zoneCounter}`;
 }
 
-const STORAGE_KEY = 'doloris-data';
-
 @Injectable({ providedIn: 'root' })
 export class PainDataService {
+  private readonly projectService = inject(ProjectService);
+  private readonly storageKey = computed(() => `doloris-data:${this.projectService.currentProjectId()}`);
   /** Toutes les zones de douleur enregistrées. */
   readonly zones = signal<PainZone[]>([]);
 
@@ -54,18 +55,32 @@ export class PainDataService {
   readonly zoneCount = computed(() => this.zones().length);
 
   constructor() {
-    this.loadFromStorage();
-    effect(() => this.persist(this.zones()));
+    // Charge les zones à chaque changement de projet
+    effect(() => {
+      const key = this.storageKey();
+      untracked(() => {
+        this.loadFromStorage(key);
+        this.selectedZoneId.set(null);
+        this.redrawTick.update((n) => n + 1);
+        this.overviewImages.set(null);
+        this.reportImages.set(new Map());
+      });
+    });
+    // Persiste les zones à chaque modification
+    effect(() => this.persist(this.storageKey(), this.zones()));
   }
 
   // ---------------------------------------------------------------------
   // Persistance localStorage
   // ---------------------------------------------------------------------
 
-  private loadFromStorage(): void {
+  private loadFromStorage(key: string): void {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
+      const raw = localStorage.getItem(key);
+      if (!raw) {
+        this.zones.set([]);
+        return;
+      }
       const parsed = JSON.parse(raw) as { zones: PainZone[] };
       if (Array.isArray(parsed.zones)) {
         this.zones.set(parsed.zones);
@@ -75,16 +90,16 @@ export class PainDataService {
     }
   }
 
-  private persist(zones: PainZone[]): void {
+  private persist(key: string, zones: PainZone[]): void {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ zones }));
+      localStorage.setItem(key, JSON.stringify({ zones }));
     } catch {
       // stockage indisponible ou plein
     }
   }
 
   save(): void {
-    this.persist(this.zones());
+    this.persist(this.storageKey(), this.zones());
   }
 
   // ---------------------------------------------------------------------

@@ -3,11 +3,12 @@ import { Router } from '@angular/router';
 
 import { BodyViewerComponent } from '../body-viewer/body-viewer.component';
 import { ZonePanelComponent } from '../zone-panel/zone-panel.component';
+import { ProjectSwitcherComponent } from '../project-switcher/project-switcher.component';
 import { PainDataService } from '../../services/pain-data.service';
 
 @Component({
   selector: 'app-mapper',
-  imports: [BodyViewerComponent, ZonePanelComponent],
+  imports: [BodyViewerComponent, ZonePanelComponent, ProjectSwitcherComponent],
   templateUrl: './mapper.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './mapper.component.scss',
