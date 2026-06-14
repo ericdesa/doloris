@@ -3,8 +3,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { UvPoint, PainZone } from '../models/pain-zone.model';
 import { getPainType } from '../models/pain-types';
-import { buildFallbackBody } from './fallback-body';
-import { inferBodyPartKey, inferBodyPartDebug } from '../models/body-parts';
 
 export interface RaycastHit {
   meshName: string;
@@ -118,26 +116,17 @@ export class BodySceneEngine {
     this.scene.add(fill);
   }
 
-  async loadModel(url: string): Promise<'gltf' | 'fallback'> {
-    let result: 'gltf' | 'fallback' = 'fallback';
+  async loadModel(url: string): Promise<void> {
+    
     try {
       const gltf = await new GLTFLoader().loadAsync(url);
       this.registerModel(gltf.scene);
-      result = 'gltf';
-    } catch (err) {
-      console.info(`[doloris] Aucun modèle à "${url}" → corps simplifié.`, err);
-      try {
-        this.registerModel(buildFallbackBody(), true);
-      } catch (fallbackErr) {
-        console.error('[doloris] Erreur fallback body:', fallbackErr);
-      }
-    }
-    try {
       this.frameModel();
-    } catch (frameErr) {
-      console.error('[doloris] Erreur frameModel:', frameErr);
+    } catch (err) {
+      console.info(`[doloris] Aucun modèle à "${url}"`, err);
+      throw err;
     }
-    return result;
+    
   }
 
   // -------------------------------------------------------------------------

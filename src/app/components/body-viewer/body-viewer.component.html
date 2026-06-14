@@ -17,14 +17,6 @@
     </div>
   }
 
-  @if (!isLoading() && modelSource() === "fallback") {
-    <div class="viewer__badge">
-      Modèle de démonstration (formes simplifiées). Déposez votre fichier
-      <code>body.glb</code> dans <code>src/assets/models/</code> pour afficher
-      un modèle anatomique réaliste.
-    </div>
-  }
-
   @if (!isLoading()) {
     <!-- Toolbar flottante (haut gauche) -->
     <div class="viewer__toolbar">
