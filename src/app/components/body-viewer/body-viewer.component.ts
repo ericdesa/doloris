@@ -3,18 +3,10 @@ import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, e
 import { BodySceneEngine, RaycastHit } from '../../services/body-scene.engine';
 import { PainDataService } from '../../services/pain-data.service';
 import { ZoneMapService } from '../../services/zone-map.service';
-import { findZoneAtUv } from '../../services/geometry.utils';
 import { resolveZoneLabel } from '../../services/zone-lookup.utils';
 import { PAIN_TYPES, getPainType } from '../../models/pain-types';
 import { UvPoint } from '../../models/pain-zone.model';
 import { ZoneDrag } from '../../models/zone-drag.model';
-
-function blendWithWhite(hex: string, ratio: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgb(${Math.round(r * ratio + 255 * (1 - ratio))},${Math.round(g * ratio + 255 * (1 - ratio))},${Math.round(b * ratio + 255 * (1 - ratio))})`;
-}
 
 @Component({
     selector: 'app-body-viewer',
@@ -43,6 +35,7 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
   private currentZoneMesh: string | null = null;
   private currentZoneDrag: ZoneDrag | null = null;
 
+  readonly isOverBody     = signal(false);
   readonly debugMode      = signal(new URLSearchParams(window.location.search).has('debug'));
   readonly isLoading      = signal(true);
   readonly showZoneMap    = signal(false);
@@ -51,15 +44,10 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
   readonly activePaintZoneKey = signal<string | null>(null);
   readonly zoneBrushRadius    = signal(0.02);
 
-  readonly zoneEntries = computed(() => Object.entries(this.zoneMapService.colors()));
+  readonly typeDropdownOpen = signal(false);
+  readonly selectedPainType = computed(() => getPainType(this.painData.draft().type));
 
-  readonly intensityDotColors = computed(() => {
-    const type = getPainType(this.painData.draft().type);
-    return Array.from({ length: 10 }, (_, i) => {
-      const ratio = 0.18 + (i / 9) * 0.82;
-      return blendWithWhite(type.color, ratio);
-    });
-  });
+  readonly zoneEntries = computed(() => Object.entries(this.zoneMapService.colors()));
 
   constructor() {
     effect(() => {
@@ -69,7 +57,9 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
     });
 
     effect(() => {
-      const zone = this.painData.selectedZone();
+      const zoneId = this.painData.focusRequest();
+      if (!zoneId) return;
+      const zone = untracked(() => this.painData.zones().find(z => z.id === zoneId));
       if (zone) this.engine?.focusOnZone(zone.meshName, zone.points);
     });
 
@@ -196,38 +186,41 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
     const hit = this.engine.raycastFromScreen(event.clientX, event.clientY);
     if (!hit) return;
 
-    if (this.painData.mode() === 'paint') {
-      const label = resolveZoneLabel(
-        this.zoneMapService.drags(),
-        this.engine.currentModelRadius,
-        hit.meshName,
-        hit.worldPoint.x, hit.worldPoint.y, hit.worldPoint.z
-      );
-      const zone = this.painData.startZone(hit.meshName, label, hit.uv);
+    const label = resolveZoneLabel(
+      this.zoneMapService.drags(),
+      this.engine.currentModelRadius,
+      hit.meshName,
+      hit.worldPoint.x, hit.worldPoint.y, hit.worldPoint.z
+    );
+    const zone = this.painData.startZone(hit.meshName, label, hit.uv);
+    this.painData.selectZone(zone.id);
 
-      this.currentZoneId = zone.id;
-      this.currentMeshName = hit.meshName;
-      this.currentPoints = [hit.uv];
-      this.isDrawing = true;
+    this.currentZoneId = zone.id;
+    this.currentMeshName = hit.meshName;
+    this.currentPoints = [hit.uv];
+    this.isDrawing = true;
 
-      this.engine.setControlsEnabled(false);
-      this.paintPoint(hit);
+    this.engine.setControlsEnabled(false);
+    this.paintPoint(hit);
 
-      const target = event.target as HTMLElement;
-      target.setPointerCapture?.(event.pointerId);
-    } else {
-      const zone = findZoneAtUv(this.painData.zones(), hit.meshName, hit.uv);
-      this.painData.selectZone(zone?.id ?? null);
-    }
+    const target = event.target as HTMLElement;
+    target.setPointerCapture?.(event.pointerId);
   }
 
   onPointerMove(event: PointerEvent): void {
     if (!this.engine) return;
-    const needsRaycast = (this.isDrawing && !!this.currentMeshName)
-      || (this.isDrawingZone && !!this.currentZoneMesh);
-    if (!needsRaycast) return;
 
     const hit = this.engine.raycastFromScreen(event.clientX, event.clientY);
+
+    const showCursor = !!hit && !this.zoneDrawMode();
+    this.isOverBody.set(showCursor);
+    if (showCursor) {
+      const draft = this.painData.draft();
+      const type = getPainType(draft.type);
+      this.engine.showBrushCursor(hit!.worldPoint, hit!.faceNormal, draft.brushRadius * this.engine.currentModelRadius, type.color);
+    } else {
+      this.engine.hideBrushCursor();
+    }
 
     if (this.isDrawingZone && this.currentZoneMesh && this.currentZoneDrag && hit?.meshName === this.currentZoneMesh) {
       const color = this.zoneMapService.colors()[this.activePaintZoneKey() ?? ''];
@@ -249,6 +242,8 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
   }
 
   onPointerLeave(): void {
+    this.isOverBody.set(false);
+    this.engine?.hideBrushCursor();
     this.finishStroke();
     this.finishZoneDraw();
   }

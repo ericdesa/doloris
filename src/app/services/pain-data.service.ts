@@ -28,6 +28,9 @@ export class PainDataService {
   /** Identifiant de la zone actuellement sélectionnée pour édition. */
   readonly selectedZoneId = signal<string | null>(null);
 
+  /** Signal pulsé lors d'une sélection manuelle pour déclencher le zoom caméra. */
+  readonly focusRequest = signal<string | null>(null);
+
   /**
    * Compteur incrémenté uniquement lors d'opérations qui nécessitent de
    * redessiner intégralement les calques de peinture (édition, suppression,

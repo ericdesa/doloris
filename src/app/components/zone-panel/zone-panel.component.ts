@@ -1,5 +1,4 @@
-import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
-
+import { Component, inject, computed, signal, ChangeDetectionStrategy } from '@angular/core';
 import { PainDataService } from '../../services/pain-data.service';
 import { PAIN_CHARACTERISTICS, PAIN_TYPES, getPainType, PainTypeId } from '../../models/pain-types';
 import { PainZone } from '../../models/pain-zone.model';
@@ -19,13 +18,14 @@ export class ZonePanelComponent {
   readonly painTypes = PAIN_TYPES;
   readonly characteristics = PAIN_CHARACTERISTICS;
   readonly getPainType = getPainType;
+  readonly typeDropdownOpen = signal(false);
 
   selectZone(zone: PainZone): void {
     if (this.painData.selectedZoneId() === zone.id) {
       this.painData.selectZone(null);
     } else {
-      this.painData.setMode('select');
       this.painData.selectZone(zone.id);
+      this.painData.focusRequest.set(zone.id);
     }
   }
 
@@ -33,14 +33,16 @@ export class ZonePanelComponent {
     this.painData.selectZone(null);
   }
 
-  onTypeChange(event: Event, zone: PainZone): void {
-    const value = (event.target as HTMLSelectElement).value as PainTypeId;
-    this.painData.updateZone(zone.id, { type: value });
+  selectZoneType(zone: PainZone, typeId: PainTypeId): void {
+    this.painData.updateZone(zone.id, { type: typeId });
+    this.painData.updateDraft({ type: typeId });
+    this.typeDropdownOpen.set(false);
   }
 
   onIntensityChange(event: Event, zone: PainZone): void {
     const value = Number((event.target as HTMLInputElement).value);
     this.painData.updateZone(zone.id, { intensity: value });
+    this.painData.updateDraft({ intensity: value });
   }
 
   onNotesChange(event: Event, zone: PainZone): void {
@@ -60,6 +62,12 @@ export class ZonePanelComponent {
     const confirmed = window.confirm('Supprimer cette zone de douleur ?');
     if (confirmed) {
       this.painData.removeZone(zone.id);
+    }
+  }
+
+  clearAll(): void {
+    if (window.confirm('Effacer toutes les zones de douleur enregistrées ?')) {
+      this.painData.clearAll();
     }
   }
 

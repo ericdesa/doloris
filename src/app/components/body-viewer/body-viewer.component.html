@@ -1,8 +1,8 @@
 <div class="viewer">
   <div
     #viewerContainer
-    class="viewer__canvas"
-    [class.viewer__canvas--paint]="painData.mode() === 'paint'"
+    class="viewer__canvas viewer__canvas--paint"
+    [class.viewer__canvas--brush]="isOverBody()"
     (pointerdown)="onPointerDown($event)"
     (pointermove)="onPointerMove($event)"
     (pointerup)="onPointerUp()"
@@ -20,92 +20,31 @@
   @if (!isLoading()) {
     <!-- Toolbar flottante (haut gauche) -->
     <div class="viewer__toolbar">
-      <!-- Bascule de mode -->
+      <!-- Taille du tracé -->
+      <div class="tb-pill">
+        <span class="tb-pill__label">Tracé</span>
+        <input
+          type="range"
+          min="0.005"
+          max="0.05"
+          step="0.002"
+          class="tb-slider"
+          [value]="painData.draft().brushRadius"
+          (input)="onBrushSizeChange($event)"
+        />
+      </div>
+
+      <!-- Cancel -->
       <div class="tb-group">
         <button
           type="button"
           class="tb-btn"
-          [class.tb-btn--active]="painData.mode() === 'paint'"
-          (click)="painData.setMode('paint')"
+          (click)="painData.removeLastZone()"
+          [disabled]="painData.zoneCount() === 0"
         >
-          ✎ Dessiner
-        </button>
-        <button
-          type="button"
-          class="tb-btn"
-          [class.tb-btn--active]="painData.mode() === 'select'"
-          (click)="painData.setMode('select')"
-        >
-          ↗ Sélectionner
+          ↩ Annuler
         </button>
       </div>
-
-      @if (painData.mode() === 'paint') {
-        <!-- Types de douleur -->
-        <div class="tb-swatches">
-          @for (type of painTypes; track type.id) {
-            <button
-              type="button"
-              class="tb-swatch"
-              [class.tb-swatch--active]="painData.draft().type === type.id"
-              [style.--c]="type.color"
-              [title]="type.label"
-              (click)="painData.updateDraft({ type: type.id })"
-            ></button>
-          }
-        </div>
-
-        <!-- Intensité -->
-        <div class="tb-pill">
-          <span class="tb-pill__label">Intensité</span>
-          <div class="intensity-track">
-            @for (color of intensityDotColors(); track $index) {
-              <button
-                type="button"
-                class="intensity-step"
-                [class.intensity-step--active]="$index < painData.draft().intensity"
-                [class.intensity-step--current]="$index + 1 === painData.draft().intensity"
-                [style.background]="$index < painData.draft().intensity ? color : null"
-                [title]="'Intensité ' + ($index + 1) + '/10'"
-                (click)="painData.updateDraft({ intensity: $index + 1 })"
-              ></button>
-            }
-          </div>
-          <strong class="tb-pill__value">{{ painData.draft().intensity }}<small>/10</small></strong>
-        </div>
-
-        <!-- Taille du tracé -->
-        <div class="tb-pill">
-          <span class="tb-pill__label">Tracé</span>
-          <input
-            type="range"
-            min="0.005" max="0.05" step="0.002"
-            class="tb-slider"
-            [value]="painData.draft().brushRadius"
-            (input)="onBrushSizeChange($event)"
-          />
-        </div>
-
-        <!-- Actions -->
-        <div class="tb-group">
-          <button
-            type="button"
-            class="tb-btn"
-            (click)="painData.removeLastZone()"
-            [disabled]="painData.zoneCount() === 0"
-          >
-            ↩ Annuler
-          </button>
-          <button
-            type="button"
-            class="tb-btn tb-btn--danger"
-            (click)="clearAll()"
-            [disabled]="painData.zoneCount() === 0"
-          >
-            ✕ Tout effacer
-          </button>
-        </div>
-      }
     </div>
 
     <!-- Haut droit : Zones + Recentrer -->
@@ -152,24 +91,42 @@
               [style.--zc]="entry[1]"
               [title]="entry[0]"
               (click)="activePaintZoneKey.set(entry[0])"
-            >{{ entry[0] }}</button>
+            >
+              {{ entry[0] }}
+            </button>
           }
         </div>
         <div class="zone-palette__row">
           <span class="zone-palette__label">Couleur</span>
           @if (activePaintZoneKey(); as key) {
-            <input type="color" class="cep__color"
+            <input
+              type="color"
+              class="cep__color"
               [value]="zoneMapService.colors()[key]"
-              (input)="onZoneColorChange(key, $event)" />
+              (input)="onZoneColorChange(key, $event)"
+            />
           }
-          <button type="button" class="tb-btn" (click)="resetColors()">Réinit.</button>
+          <button type="button" class="tb-btn" (click)="resetColors()">
+            Réinit.
+          </button>
         </div>
         <div class="zone-palette__row">
           <span class="zone-palette__label">Pinceau</span>
-          <input type="range" class="tb-slider" min="0.005" max="0.06" step="0.002"
-            [value]="zoneBrushRadius()" (input)="onZoneBrushChange($event)" />
+          <input
+            type="range"
+            class="tb-slider"
+            min="0.005"
+            max="0.06"
+            step="0.002"
+            [value]="zoneBrushRadius()"
+            (input)="onZoneBrushChange($event)"
+          />
         </div>
-        <button type="button" class="tb-btn tb-btn--danger zone-palette__clear" (click)="clearZoneMap()">
+        <button
+          type="button"
+          class="tb-btn tb-btn--danger zone-palette__clear"
+          (click)="clearZoneMap()"
+        >
           ✕ Effacer la carte
         </button>
       </div>
@@ -179,14 +136,13 @@
   <div class="viewer__hint">
     @if (zoneDrawMode()) {
       @if (activePaintZoneKey()) {
-        Cliquer et glisser pour peindre la zone · choisir une zone dans la palette
+        Cliquer et glisser pour peindre la zone · choisir une zone dans la
+        palette
       } @else {
         Sélectionnez une zone dans la palette pour commencer à peindre
       }
-    } @else if (painData.mode() === "paint") {
-      Cliquez et glissez sur le corps pour dessiner l'étendue de la douleur
     } @else {
-      Glisser pour tourner · Maj+Glisser pour déplacer · Molette pour zoomer
+      Cliquez et glissez sur le corps pour dessiner l'étendue de la douleur
     }
   </div>
 </div>

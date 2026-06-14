@@ -8,6 +8,7 @@ export interface RaycastHit {
   meshName: string;
   uv: UvPoint;
   worldPoint: THREE.Vector3;
+  faceNormal: THREE.Vector3;
 }
 
 /**
@@ -44,6 +45,7 @@ export class BodySceneEngine {
   private resizeObserver: ResizeObserver;
   private animationFrame = 0;
   private disposed = false;
+  private brushCursor!: THREE.Mesh;
 
   onFrame: (() => void) | null = null;
 
@@ -73,7 +75,7 @@ export class BodySceneEngine {
   };
 
   constructor(private container: HTMLElement) {
-    this.scene.background = new THREE.Color(0xeef3f4);
+    this.scene.background = new THREE.Color(0xf6f9fa);
 
     const { clientWidth, clientHeight } = container;
     this.camera = new THREE.PerspectiveCamera(35, clientWidth / Math.max(clientHeight, 1), 0.05, 100);
@@ -96,6 +98,7 @@ export class BodySceneEngine {
     document.addEventListener('keyup', this._onKeyUp);
 
     this.setupLights();
+    this.initBrushCursor();
 
     this.resizeObserver = new ResizeObserver(() => this.onResize());
     this.resizeObserver.observe(container);
@@ -117,6 +120,58 @@ export class BodySceneEngine {
     const fill = new THREE.DirectionalLight(0xffffff, 0.45);
     fill.position.set(-3, 1.5, -2);
     this.scene.add(fill);
+  }
+
+  private brushCursorFill!: THREE.Mesh;
+
+  private initBrushCursor(): void {
+    const fillGeo = new THREE.CircleGeometry(1, 48);
+    const fillMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.8,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    this.brushCursorFill = new THREE.Mesh(fillGeo, fillMat);
+    this.brushCursorFill.visible = false;
+    this.brushCursorFill.renderOrder = 998;
+    this.scene.add(this.brushCursorFill);
+
+    const ringGeo = new THREE.RingGeometry(0.9, 1, 48);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 1,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    this.brushCursor = new THREE.Mesh(ringGeo, ringMat);
+    this.brushCursor.visible = false;
+    this.brushCursor.renderOrder = 999;
+    this.scene.add(this.brushCursor);
+  }
+
+  showBrushCursor(worldPoint: THREE.Vector3, normal: THREE.Vector3, worldRadius: number, colorHex: string): void {
+    const pos = worldPoint.clone().addScaledVector(normal, 0.003 * this.modelRadius);
+    const target = pos.clone().add(normal);
+
+    (this.brushCursorFill.material as THREE.MeshBasicMaterial).color.set(colorHex);
+    this.brushCursorFill.position.copy(pos);
+    this.brushCursorFill.scale.setScalar(worldRadius);
+    this.brushCursorFill.lookAt(target);
+    this.brushCursorFill.visible = true;
+
+    (this.brushCursor.material as THREE.MeshBasicMaterial).color.set(colorHex);
+    this.brushCursor.position.copy(pos);
+    this.brushCursor.scale.setScalar(worldRadius);
+    this.brushCursor.lookAt(target);
+    this.brushCursor.visible = true;
+  }
+
+  hideBrushCursor(): void {
+    this.brushCursorFill.visible = false;
+    this.brushCursor.visible = false;
   }
 
   async loadModel(url: string): Promise<void> {
@@ -501,10 +556,14 @@ export class BodySceneEngine {
     const hit  = hits.find(h => !!h.uv);
     if (!hit?.uv) return null;
     if (!this.paintLayers.has(hit.object.name)) return null;
+    const faceNormal = hit.face!.normal.clone()
+      .transformDirection(hit.object.matrixWorld)
+      .normalize();
     return {
       meshName: hit.object.name,
       uv: { u: hit.uv.x, v: hit.uv.y, wx: hit.point.x, wy: hit.point.y, wz: hit.point.z },
       worldPoint: hit.point.clone(),
+      faceNormal,
     };
   }
 
@@ -643,22 +702,19 @@ export class BodySceneEngine {
    * du pinceau (bords doux). Le compositing "over" préserve les couches déjà
    * peintes et les mélange avec la nouvelle couleur.
    */
-  paintAt(meshName: string, worldPoint: THREE.Vector3, colorHex: string, intensity: number, brushRadius: number): void {
+  paintAt(meshName: string, worldPoint: THREE.Vector3, colorHex: string, _intensity: number, brushRadius: number): void {
     const layer = this.paintLayers.get(meshName);
     if (!layer) return;
 
     const { colorAttr, worldPositions } = layer;
     const worldRadius = brushRadius * this.modelRadius;
     const r2 = worldRadius * worldRadius;
-    const maxAlpha = 0.22 + (intensity / 10) * 0.55;
+    const maxAlpha = 0.72;
 
-    // Low intensity → pastel (blend toward white); high intensity → full vivid color
-    const intensityT = (intensity - 1) / 9; // 0 at intensity=1, 1 at intensity=10
-    const baseRatio = 0.18 + intensityT * 0.82;
     const tc = new THREE.Color(colorHex);
-    const pr = tc.r + (1 - tc.r) * (1 - baseRatio);
-    const pg = tc.g + (1 - tc.g) * (1 - baseRatio);
-    const pb = tc.b + (1 - tc.b) * (1 - baseRatio);
+    const pr = tc.r;
+    const pg = tc.g;
+    const pb = tc.b;
     const arr = colorAttr.array as Float32Array;
     const px = worldPoint.x, py = worldPoint.y, pz = worldPoint.z;
     const n = colorAttr.count;
@@ -672,7 +728,7 @@ export class BodySceneEngine {
       if (d2 >= r2) continue;
 
       const t = 1 - Math.sqrt(d2) / worldRadius; // 0..1
-      const strokeA = maxAlpha * t * t;           // décroissance quadratique
+      const strokeA = maxAlpha * t * t;
       if (strokeA < 0.004) continue;
 
       const base = i * 4;

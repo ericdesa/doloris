@@ -16,6 +16,7 @@ export type PainTypeId =
 export interface PainTypeDefinition {
   id: PainTypeId;
   label: string;
+  shortLabel: string;
   description: string;
   /** Couleur hexadécimale, utilisée à la fois pour l'UI et pour le dessin sur le modèle 3D */
   color: string;
@@ -25,48 +26,56 @@ export const PAIN_TYPES: PainTypeDefinition[] = [
   {
     id: 'burning',
     label: 'Brûlure',
+    shortLabel: 'Brûlure',
     description: 'Sensation de chaleur, de feu',
     color: '#e0563f',
   },
   {
     id: 'stabbing',
     label: 'Décharge / élancement',
+    shortLabel: 'Décharge',
     description: 'Douleur vive, soudaine, en coup de poignard',
     color: '#f3a23a',
   },
   {
     id: 'tingling',
     label: 'Picotement / fourmillement',
+    shortLabel: 'Picotement',
     description: 'Fourmis, picotements, sensation électrique légère',
     color: '#9b6bd6',
   },
   {
     id: 'aching',
     label: 'Douleur sourde / tension',
+    shortLabel: 'Tension',
     description: 'Gêne diffuse, tension, lourdeur',
     color: '#3a86c8',
   },
   {
     id: 'cramping',
     label: 'Crampe / spasme',
+    shortLabel: 'Crampe',
     description: 'Contraction involontaire, spasme musculaire',
     color: '#9c6644',
   },
   {
     id: 'numbness',
     label: 'Engourdissement',
+    shortLabel: 'Engourdi',
     description: 'Perte de sensation, zone "endormie"',
     color: '#98a4a8',
   },
   {
     id: 'pressure',
     label: 'Pression / oppression',
+    shortLabel: 'Pression',
     description: "Sensation d'écrasement, de poids, d'étau",
     color: '#2f9e8f',
   },
   {
     id: 'other',
     label: 'Autre',
+    shortLabel: 'Autre',
     description: 'Sensation difficile à classer',
     color: '#6c7a82',
   },

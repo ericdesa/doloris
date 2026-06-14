@@ -2,13 +2,19 @@
   <div class="panel__block">
     <h2 class="panel__title">
       Zones enregistrées
-      <span class="panel__value">{{ painData.zoneCount() }}</span>
+      <div class="panel__title-end">
+        <span class="panel__value">{{ painData.zoneCount() }}</span>
+        @if (painData.zoneCount() > 0) {
+          <button type="button" class="btn btn--ghost btn--danger panel__clear-btn" (click)="clearAll()">
+            ✕ Tout effacer
+          </button>
+        }
+      </div>
     </h2>
 
     @if (painData.zoneCount() === 0) {
       <p class="panel__hint">
-        Aucune zone pour l'instant. Passez en mode « Dessiner » et tracez une zone directement
-        sur le modèle 3D.
+        Aucune zone pour l'instant. Tracez une zone directement sur le modèle 3D.
       </p>
     } @else {
       <ul class="zone-list">
@@ -25,14 +31,37 @@
 
             @if (painData.selectedZoneId() === zone.id) {
               <div class="zone-detail">
-                <label class="zone-detail__field">
+                <div class="zone-detail__field">
                   <span>Type de douleur</span>
-                  <select class="select" [value]="zone.type" (change)="onTypeChange($event, zone)">
-                    @for (type of painTypes; track type.id) {
-                      <option [value]="type.id">{{ type.label }}</option>
+                  <div class="tb-type-select" (document:click)="typeDropdownOpen.set(false)">
+                    <button
+                      type="button"
+                      class="tb-pill tb-type-trigger"
+                      [style.--c]="getPainType(zone.type).color"
+                      (click)="$event.stopPropagation(); typeDropdownOpen.update(v => !v)"
+                    >
+                      <span class="tb-chip__dot"></span>
+                      {{ getPainType(zone.type).shortLabel }}
+                      <svg class="tb-select-arrow" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    @if (typeDropdownOpen()) {
+                      <div class="tb-type-dropdown" (click)="$event.stopPropagation()">
+                        @for (type of painTypes; track type.id) {
+                          <button
+                            type="button"
+                            class="tb-type-option"
+                            [class.tb-type-option--active]="zone.type === type.id"
+                            [style.--c]="type.color"
+                            (click)="selectZoneType(zone, type.id)"
+                          >
+                            <span class="tb-chip__dot"></span>
+                            {{ type.label }}
+                          </button>
+                        }
+                      </div>
                     }
-                  </select>
-                </label>
+                  </div>
+                </div>
 
                 <label class="zone-detail__field">
                   <span>Intensité : {{ zone.intensity }}/10</span>

@@ -1,5 +1,28 @@
 @use '../../shared/panel-controls';
 
+.panel__title-end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel__clear-btn {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  line-height: 1.5;
+}
+
+.panel__hint-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--color-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
 .zone-list {
   list-style: none;
   margin: 0;
@@ -84,6 +107,91 @@
   font-weight: 600;
   color: var(--color-ink);
 }
+
+// Custom type-select dropdown (réutilisé depuis la toolbar viewer)
+.tb-type-select {
+  position: relative;
+}
+
+.tb-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: border-color 0.15s;
+  width: 100%;
+
+  &:hover {
+    border-color: var(--color-primary);
+  }
+}
+
+.tb-chip__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c);
+  flex-shrink: 0;
+}
+
+.tb-select-arrow {
+  color: var(--color-muted);
+  margin-left: auto;
+  flex-shrink: 0;
+  display: block;
+}
+
+.tb-type-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  z-index: 20;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.tb-type-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--color-ink);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.1s;
+
+  &:hover {
+    background: color-mix(in srgb, var(--c) 12%, transparent);
+  }
+
+  &--active {
+    background: color-mix(in srgb, var(--c) 14%, white);
+    color: color-mix(in srgb, var(--c) 75%, black);
+    font-weight: 600;
+  }
+}
+
 
 .zone-detail__actions {
   display: flex;
