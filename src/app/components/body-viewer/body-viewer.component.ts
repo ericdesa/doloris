@@ -44,7 +44,6 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
   readonly activePaintZoneKey = signal<string | null>(null);
   readonly zoneBrushRadius    = signal(0.02);
 
-  readonly typeDropdownOpen = signal(false);
   readonly selectedPainType = computed(() => getPainType(this.painData.draft().type));
 
   readonly zoneEntries = computed(() => Object.entries(this.zoneMapService.colors()));
@@ -252,7 +251,7 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
     if (!this.engine || !this.currentMeshName) return;
     const draft = this.painData.draft();
     const type = getPainType(draft.type);
-    this.engine.paintAt(this.currentMeshName, hit.worldPoint, type.color, draft.intensity, draft.brushRadius);
+    this.engine.paintAt(this.currentMeshName, hit.worldPoint, type.color, draft.brushRadius);
   }
 
   private finishStroke(): void {

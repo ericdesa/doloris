@@ -1,11 +1,21 @@
 <section class="panel">
   <div class="panel__block">
     <h2 class="panel__title">
-      Zones enregistrées
+      @if (painData.zoneCount() === 0) {
+        Zones enregistrées
+      } @else if (painData.zoneCount() === 1) {
+        1 zone enregistrée
+      } @else if (painData.zoneCount() > 1) {
+        {{ painData.zoneCount() }} zones enregistrées
+      }
+
       <div class="panel__title-end">
-        <span class="panel__value">{{ painData.zoneCount() }}</span>
         @if (painData.zoneCount() > 0) {
-          <button type="button" class="btn btn--ghost btn--danger panel__clear-btn" (click)="clearAll()">
+          <button
+            type="button"
+            class="btn btn--ghost btn--danger panel__clear-btn"
+            (click)="clearAll()"
+          >
             ✕ Tout effacer
           </button>
         }
@@ -14,26 +24,48 @@
 
     @if (painData.zoneCount() === 0) {
       <p class="panel__hint">
-        Aucune zone pour l'instant. Tracez une zone directement sur le modèle 3D.
+        Aucune zone pour l'instant. Tracez une zone directement sur le modèle
+        3D.
       </p>
     } @else {
       <ul class="zone-list">
         @for (zone of zonesNewestFirst(); track zone.id; let i = $index) {
           @let zoneNumber = painData.zoneCount() - i;
-          <li class="zone-list__item" [class.zone-list__item--active]="painData.selectedZoneId() === zone.id" [style.--zone-color]="getPainType(zone.type).color">
-            <button type="button" class="zone-list__summary" (click)="selectZone(zone)">
+          <li
+            class="zone-list__item"
+            [class.zone-list__item--active]="
+              painData.selectedZoneId() === zone.id
+            "
+            [style.--zone-color]="getPainType(zone.type).color"
+          >
+            <button
+              type="button"
+              class="zone-list__summary"
+              (click)="selectZone(zone)"
+            >
               <span class="zone-list__info">
-                <strong><span class="zone-list__number">{{ zoneNumber }}</span> {{ zone.bodyPartLabel }}</strong>
-                <small>{{ getPainType(zone.type).label }} · intensité {{ zone.intensity }}/10</small>
+                <strong
+                  ><span class="zone-list__number">{{ zoneNumber }}</span>
+                  {{ zone.bodyPartLabel }}</strong
+                >
+                <small
+                  >{{ getPainType(zone.type).label }} · intensité
+                  {{ zone.intensity }}/10</small
+                >
               </span>
-              <span class="zone-list__chevron">{{ painData.selectedZoneId() === zone.id ? '−' : '+' }}</span>
+              <span class="zone-list__chevron">{{
+                painData.selectedZoneId() === zone.id ? "−" : "+"
+              }}</span>
             </button>
 
             @if (painData.selectedZoneId() === zone.id) {
               <div class="zone-detail">
                 <div class="zone-detail__field">
                   <span>Type de douleur</span>
-                  <div class="tb-type-select" (document:click)="typeDropdownOpen.set(false)">
+                  <div
+                    class="tb-type-select"
+                    (document:click)="typeDropdownOpen.set(false)"
+                  >
                     <button
                       type="button"
                       class="tb-pill tb-type-trigger"
@@ -42,15 +74,34 @@
                     >
                       <span class="tb-chip__dot"></span>
                       {{ getPainType(zone.type).shortLabel }}
-                      <svg class="tb-select-arrow" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                      <svg
+                        class="tb-select-arrow"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
                     </button>
                     @if (typeDropdownOpen()) {
-                      <div class="tb-type-dropdown" (click)="$event.stopPropagation()">
+                      <div
+                        class="tb-type-dropdown"
+                        (click)="$event.stopPropagation()"
+                      >
                         @for (type of painTypes; track type.id) {
                           <button
                             type="button"
                             class="tb-type-option"
-                            [class.tb-type-option--active]="zone.type === type.id"
+                            [class.tb-type-option--active]="
+                              zone.type === type.id
+                            "
                             [style.--c]="type.color"
                             (click)="selectZoneType(zone, type.id)"
                           >
@@ -104,8 +155,18 @@
                 </label>
 
                 <div class="zone-detail__actions">
-                  <button type="button" class="btn btn--ghost" (click)="closeDetail()">Fermer</button>
-                  <button type="button" class="btn btn--ghost btn--danger" (click)="deleteZone(zone)">
+                  <button
+                    type="button"
+                    class="btn btn--ghost"
+                    (click)="closeDetail()"
+                  >
+                    Fermer
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn--ghost btn--danger"
+                    (click)="deleteZone(zone)"
+                  >
                     Supprimer cette zone
                   </button>
                 </div>
@@ -116,5 +177,4 @@
       </ul>
     }
   </div>
-
 </section>

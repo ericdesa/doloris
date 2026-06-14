@@ -47,8 +47,6 @@ export class BodySceneEngine {
   private disposed = false;
   private brushCursor!: THREE.Mesh;
 
-  onFrame: (() => void) | null = null;
-
   private modelRoot: THREE.Object3D | null = null;
   private modelRadius = 1;
   get currentModelRadius(): number { return this.modelRadius; }
@@ -606,21 +604,7 @@ export class BodySceneEngine {
     if (dirty) zoneColorAttr.needsUpdate = true;
   }
 
-  /** Rejoue une liste de tracés de zone (restauration depuis localStorage). */
-  replayZoneDrags(drags: ReadonlyArray<{
-    meshName: string; colorHex: string; brushRadius: number;
-    points: ReadonlyArray<{ wx: number; wy: number; wz: number }>;
-  }>): void {
-    const v = new THREE.Vector3();
-    for (const drag of drags) {
-      for (const p of drag.points) {
-        this.paintZone(drag.meshName, v.set(p.wx, p.wy, p.wz), drag.colorHex, drag.brushRadius);
-      }
-    }
-  }
-
   /**
-   * Version optimisée de replayZoneDrags : un seul parcours des sommets par mesh
    * au lieu de N_points parcours. Les couleurs et rayons sont pré-calculés par drag.
    * Sémantique identique : last drag wins (les drags sont appliqués dans l'ordre).
    */
@@ -702,7 +686,7 @@ export class BodySceneEngine {
    * du pinceau (bords doux). Le compositing "over" préserve les couches déjà
    * peintes et les mélange avec la nouvelle couleur.
    */
-  paintAt(meshName: string, worldPoint: THREE.Vector3, colorHex: string, _intensity: number, brushRadius: number): void {
+  paintAt(meshName: string, worldPoint: THREE.Vector3, colorHex: string, brushRadius: number): void {
     const layer = this.paintLayers.get(meshName);
     if (!layer) return;
 
@@ -762,7 +746,7 @@ export class BodySceneEngine {
         const wp = (pt.wx !== undefined && pt.wy !== undefined && pt.wz !== undefined)
           ? new THREE.Vector3(pt.wx, pt.wy, pt.wz)
           : this.uvToWorldPoint(layer, pt.u, pt.v);
-        this.paintAt(zone.meshName, wp, type.color, zone.intensity, zone.brushRadius);
+        this.paintAt(zone.meshName, wp, type.color, zone.brushRadius);
       }
     }
   }
@@ -833,7 +817,6 @@ export class BodySceneEngine {
     this.applyKeyboardCamera();
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
-    this.onFrame?.();
   };
 
   dispose(): void {
