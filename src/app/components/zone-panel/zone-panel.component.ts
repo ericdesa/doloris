@@ -75,7 +75,7 @@ export class ZonePanelComponent {
     const sourceLabel = sourceZone?.bodyPartLabel ?? 'cette zone';
     if (
       !window.confirm(
-        `Fusionner « ${sourceLabel} » dans « ${targetZone.bodyPartLabel} » ?\nLes tracés de la source remplaceront ceux de la cible.`,
+        `Fusionner « ${sourceLabel} » dans « ${targetZone.bodyPartLabel} » ?\nLes tracés des deux zones seront combinés.`,
       )
     )
       return;

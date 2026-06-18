@@ -174,7 +174,7 @@ export class PainDataService {
         .filter((z) => z.id !== sourceId)
         .map((z) =>
           z.id === targetId
-            ? { ...z, points: source.points, updatedAt: new Date().toISOString() }
+            ? { ...z, points: [...z.points, ...source.points], updatedAt: new Date().toISOString() }
             : z,
         ),
     );
