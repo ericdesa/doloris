@@ -184,6 +184,14 @@ export class PainDataService {
     this.redrawTick.update((n) => n + 1);
   }
 
+  reorderZones(fromDisplayIdx: number, toDisplayIdx: number): void {
+    if (fromDisplayIdx === toDisplayIdx) return;
+    const display = [...this.zones()].reverse();
+    const [item] = display.splice(fromDisplayIdx, 1);
+    display.splice(toDisplayIdx, 0, item);
+    this.zones.set(display.reverse());
+  }
+
   removeLastZone(): void {
     const zones = this.zones();
     if (zones.length === 0) return;

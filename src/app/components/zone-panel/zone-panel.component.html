@@ -36,11 +36,13 @@
           </button>
         </div>
       }
-      <ul class="zone-list">
+      <ul class="zone-list" cdkDropList (cdkDropListDropped)="onDrop($event)">
         @for (zone of zonesNewestFirst(); track zone.id; let i = $index) {
           @let zoneNumber = painData.zoneCount() - i;
           <li
             class="zone-list__item"
+            cdkDrag
+            [cdkDragDisabled]="!!mergingFromZoneId()"
             [class.zone-list__item--active]="
               painData.selectedZoneId() === zone.id
             "
@@ -49,25 +51,40 @@
             "
             [style.--zone-color]="getPainType(zone.type).color"
           >
-            <button
-              type="button"
-              class="zone-list__summary"
-              (click)="selectZone(zone)"
-            >
-              <span class="zone-list__info">
-                <strong
-                  ><span class="zone-list__number">{{ zoneNumber }}</span>
-                  {{ zone.bodyPartLabel }}</strong
-                >
-                <small
-                  >{{ getPainType(zone.type).label }} · intensité
-                  {{ zone.intensity }}/10</small
-                >
-              </span>
-              <span class="zone-list__chevron">{{
-                painData.selectedZoneId() === zone.id ? "−" : "+"
-              }}</span>
-            </button>
+            <div class="zone-list__row">
+              <button
+                type="button"
+                class="zone-drag-handle"
+                cdkDragHandle
+                aria-label="Réordonner"
+                [style.visibility]="painData.zoneCount() >= 2 ? 'visible' : 'hidden'"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/>
+                  <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+                  <circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/>
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="zone-list__summary"
+                (click)="selectZone(zone)"
+              >
+                <span class="zone-list__info">
+                  <strong
+                    ><span class="zone-list__number">{{ zoneNumber }}</span>
+                    {{ zone.bodyPartLabel }}</strong
+                  >
+                  <small
+                    >{{ getPainType(zone.type).label }} · intensité
+                    {{ zone.intensity }}/10</small
+                  >
+                </span>
+                <span class="zone-list__chevron">{{
+                  painData.selectedZoneId() === zone.id ? "−" : "+"
+                }}</span>
+              </button>
+            </div>
 
             @if (mergingFromZoneId() && mergingFromZoneId() !== zone.id) {
               <button

@@ -1,11 +1,12 @@
 import { Component, inject, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import { CdkDragDrop, CdkDrag, CdkDropList, CdkDragHandle } from '@angular/cdk/drag-drop';
 import { PainDataService } from '../../services/pain-data.service';
 import { PAIN_CHARACTERISTICS, PAIN_TYPES, getPainType, PainTypeId } from '../../models/pain-types';
 import { PainZone } from '../../models/pain-zone.model';
 
 @Component({
   selector: 'app-zone-panel',
-  imports: [],
+  imports: [CdkDropList, CdkDrag, CdkDragHandle],
   templateUrl: './zone-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './zone-panel.component.scss',
@@ -80,6 +81,10 @@ export class ZonePanelComponent {
       return;
     this.painData.mergeZones(sourceId, targetZone.id);
     this.mergingFromZoneId.set(null);
+  }
+
+  onDrop(event: CdkDragDrop<PainZone[]>): void {
+    this.painData.reorderZones(event.previousIndex, event.currentIndex);
   }
 
   deleteZone(zone: PainZone): void {
