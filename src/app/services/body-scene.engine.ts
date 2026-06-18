@@ -31,7 +31,6 @@ interface PaintLayer {
   zoneColorAttr: THREE.Float32BufferAttribute;
 }
 
-
 export class BodySceneEngine {
   private scene = new THREE.Scene();
   private camera: THREE.PerspectiveCamera;
@@ -46,10 +45,17 @@ export class BodySceneEngine {
   private animationFrame = 0;
   private disposed = false;
   private brushCursor!: THREE.Mesh;
+  private readonly markerGroup = new THREE.Group();
+  private readonly markerSprites = new Map<
+    string,
+    { sprite: THREE.Sprite; texture: THREE.CanvasTexture; line: THREE.Line; surfacePt: THREE.Vector3 }
+  >();
 
   private modelRoot: THREE.Object3D | null = null;
   private modelRadius = 1;
-  get currentModelRadius(): number { return this.modelRadius; }
+  get currentModelRadius(): number {
+    return this.modelRadius;
+  }
   private modelCenter = new THREE.Vector3();
 
   private _focusTarget = new THREE.Vector3();
@@ -101,10 +107,14 @@ export class BodySceneEngine {
     this.resizeObserver = new ResizeObserver(() => this.onResize());
     this.resizeObserver.observe(container);
 
+    this.markerGroup.visible = false;
+    this.scene.add(this.markerGroup);
     this.animate();
   }
 
-  get domElement(): HTMLCanvasElement { return this.renderer.domElement; }
+  get domElement(): HTMLCanvasElement {
+    return this.renderer.domElement;
+  }
 
   // -------------------------------------------------------------------------
   // Scène / lumières
@@ -173,7 +183,6 @@ export class BodySceneEngine {
   }
 
   async loadModel(url: string): Promise<void> {
-    
     try {
       const gltf = await new GLTFLoader().loadAsync(url);
       this.registerModel(gltf.scene);
@@ -182,7 +191,6 @@ export class BodySceneEngine {
       console.info(`[doloris] Aucun modèle à "${url}"`, err);
       throw err;
     }
-    
   }
 
   // -------------------------------------------------------------------------
@@ -194,27 +202,30 @@ export class BodySceneEngine {
     if (!pos) return;
     geometry.computeBoundingBox();
     const box = geometry.boundingBox!;
-    const xR = (box.max.x - box.min.x) || 1;
-    const yR = (box.max.y - box.min.y) || 1;
-    const zR = (box.max.z - box.min.z) || 1;
+    const xR = box.max.x - box.min.x || 1;
+    const yR = box.max.y - box.min.y || 1;
+    const zR = box.max.z - box.min.z || 1;
     const uv = new Float32Array(pos.count * 2);
     if (xR > yR && xR > zR) {
-      const cy = (box.min.y + box.max.y) / 2, cz = (box.min.z + box.max.z) / 2;
+      const cy = (box.min.y + box.max.y) / 2,
+        cz = (box.min.z + box.max.z) / 2;
       for (let i = 0; i < pos.count; i++) {
-        uv[i*2]   = 0.5 + Math.atan2(pos.getZ(i)-cz, pos.getY(i)-cy) / (2*Math.PI);
-        uv[i*2+1] = 1 - (pos.getX(i) - box.min.x) / xR;
+        uv[i * 2] = 0.5 + Math.atan2(pos.getZ(i) - cz, pos.getY(i) - cy) / (2 * Math.PI);
+        uv[i * 2 + 1] = 1 - (pos.getX(i) - box.min.x) / xR;
       }
     } else if (zR > yR && zR > xR) {
-      const cx = (box.min.x + box.max.x) / 2, cy = (box.min.y + box.max.y) / 2;
+      const cx = (box.min.x + box.max.x) / 2,
+        cy = (box.min.y + box.max.y) / 2;
       for (let i = 0; i < pos.count; i++) {
-        uv[i*2]   = 0.5 + Math.atan2(pos.getY(i)-cy, pos.getX(i)-cx) / (2*Math.PI);
-        uv[i*2+1] = 1 - (pos.getZ(i) - box.min.z) / zR;
+        uv[i * 2] = 0.5 + Math.atan2(pos.getY(i) - cy, pos.getX(i) - cx) / (2 * Math.PI);
+        uv[i * 2 + 1] = 1 - (pos.getZ(i) - box.min.z) / zR;
       }
     } else {
-      const cx = (box.min.x + box.max.x) / 2, cz = (box.min.z + box.max.z) / 2;
+      const cx = (box.min.x + box.max.x) / 2,
+        cz = (box.min.z + box.max.z) / 2;
       for (let i = 0; i < pos.count; i++) {
-        uv[i*2]   = 0.5 + Math.atan2(pos.getZ(i)-cz, pos.getX(i)-cx) / (2*Math.PI);
-        uv[i*2+1] = 1 - (pos.getY(i) - box.min.y) / yR;
+        uv[i * 2] = 0.5 + Math.atan2(pos.getZ(i) - cz, pos.getX(i) - cx) / (2 * Math.PI);
+        uv[i * 2 + 1] = 1 - (pos.getY(i) - box.min.y) / yR;
       }
     }
     geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
@@ -236,13 +247,16 @@ export class BodySceneEngine {
       else if (!attrs['uv'] || forceGenerateUV) this.generateCylindricalUV(obj.geometry, obj.name);
       if (!obj.geometry.attributes['uv']) return;
       let name = obj.name || '';
-      if (!name || usedNames.has(name)) { name = `partie-${idx}`; obj.name = name; }
+      if (!name || usedNames.has(name)) {
+        name = `partie-${idx}`;
+        obj.name = name;
+      }
       usedNames.add(name);
       idx++;
       meshes.push(obj);
     });
 
-    console.log(`[doloris] ${meshes.length} maillage(s) : ${meshes.map(m => `"${m.name}"`).join(', ')}`);
+    console.log(`[doloris] ${meshes.length} maillage(s) : ${meshes.map((m) => `"${m.name}"`).join(', ')}`);
     if (!meshes.length) console.warn('[doloris] Aucun maillage peignable.');
 
     root.updateMatrixWorld(true);
@@ -254,7 +268,9 @@ export class BodySceneEngine {
   // -------------------------------------------------------------------------
 
   private createPaintLayer(mesh: THREE.Mesh): void {
-    console.log(`[doloris] createPaintLayer "${mesh.name}" (${mesh instanceof THREE.SkinnedMesh ? 'SkinnedMesh' : 'Mesh'}, ${mesh.geometry.attributes['position']?.count ?? 0} sommets)`);
+    console.log(
+      `[doloris] createPaintLayer "${mesh.name}" (${mesh instanceof THREE.SkinnedMesh ? 'SkinnedMesh' : 'Mesh'}, ${mesh.geometry.attributes['position']?.count ?? 0} sommets)`,
+    );
     const posAttr = mesh.geometry.attributes['position'] as THREE.BufferAttribute | undefined;
     if (!posAttr) return;
 
@@ -377,13 +393,19 @@ export class BodySceneEngine {
     if (srcIdx) {
       const arr = srcIdx.array;
       for (let f = 0; f < arr.length; f += 3) {
-        const a = arr[f], b = arr[f + 1], c = arr[f + 2];
-        const ab = midpoint(a, b), bc = midpoint(b, c), ca = midpoint(c, a);
+        const a = arr[f],
+          b = arr[f + 1],
+          c = arr[f + 2];
+        const ab = midpoint(a, b),
+          bc = midpoint(b, c),
+          ca = midpoint(c, a);
         indices.push(a, ab, ca, ab, b, bc, ca, bc, c, ab, bc, ca);
       }
     } else {
       for (let f = 0; f < srcPos.count; f += 3) {
-        const ab = midpoint(f, f + 1), bc = midpoint(f + 1, f + 2), ca = midpoint(f + 2, f);
+        const ab = midpoint(f, f + 1),
+          bc = midpoint(f + 1, f + 2),
+          ca = midpoint(f + 2, f);
         indices.push(f, ab, ca, ab, f + 1, bc, ca, bc, f + 2, ab, bc, ca);
       }
     }
@@ -401,7 +423,9 @@ export class BodySceneEngine {
     const v = new THREE.Vector3();
     for (let i = 0; i < n; i++) {
       v.fromBufferAttribute(posAttr, i).applyMatrix4(matrixWorld);
-      out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z;
+      out[i * 3] = v.x;
+      out[i * 3 + 1] = v.y;
+      out[i * 3 + 2] = v.z;
     }
     return out;
   }
@@ -414,14 +438,14 @@ export class BodySceneEngine {
     this.scene.updateMatrixWorld(true);
     if (!this.modelRoot) return;
     const box = new THREE.Box3().expandByObject(this.modelRoot);
-    const size   = box.getSize(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
     const radius = size.length() * 0.5 || 0.5;
     this.modelRadius = radius;
     this.modelCenter.copy(center);
     this.modelSize.copy(size);
     this.camera.near = radius / 100;
-    this.camera.far  = radius * 1000;
+    this.camera.far = radius * 1000;
     this.camera.updateProjectionMatrix();
     this.controls.minDistance = radius * 0.3;
     this.controls.maxDistance = radius * 12;
@@ -436,9 +460,9 @@ export class BodySceneEngine {
     }
     const vFov = (this.camera.fov * Math.PI) / 180;
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * this.camera.aspect);
-    const distV = (this.modelSize.y / 2) / Math.tan(vFov / 2);
-    const distH = (this.modelSize.x / 2) / Math.tan(hFov / 2);
-    const dist  = Math.max(distV, distH, this.modelRadius) * 1.2;
+    const distV = this.modelSize.y / 2 / Math.tan(vFov / 2);
+    const distH = this.modelSize.x / 2 / Math.tan(hFov / 2);
+    const dist = Math.max(distV, distH, this.modelRadius) * 1.2;
     const targetPos = new THREE.Vector3(this.modelCenter.x, this.modelCenter.y, this.modelCenter.z + dist);
     if (animated) {
       this._focusTarget.copy(this.modelCenter);
@@ -456,35 +480,40 @@ export class BodySceneEngine {
   // Focus / capture de zone
   // -------------------------------------------------------------------------
 
-  private resolveZone(
-    layer: PaintLayer,
-    points: UvPoint[]
-  ): { worldPos: THREE.Vector3; dir: THREE.Vector3 } | null {
+  private resolveZone(layer: PaintLayer, points: UvPoint[]): { worldPos: THREE.Vector3; dir: THREE.Vector3 } | null {
     const normAttr = layer.mesh.geometry.attributes['normal'] as THREE.BufferAttribute | undefined;
 
     // Use wx/wy/wz (raycast world positions) when available — more reliable
     // than UV-centroid lookup which can land on the wrong side of the mesh
     // (e.g. palm vs. back-of-hand share adjacent UV regions).
-    const ptsW = points.filter(p => p.wx !== undefined);
+    const ptsW = points.filter((p) => p.wx !== undefined);
     let worldPos: THREE.Vector3;
     if (ptsW.length > 0) {
       worldPos = new THREE.Vector3();
-      for (const p of ptsW) worldPos.x += p.wx!, worldPos.y += p.wy!, worldPos.z += p.wz!;
+      for (const p of ptsW) {
+        worldPos.x += p.wx!;
+        worldPos.y += p.wy!;
+        worldPos.z += p.wz!;
+      }
       worldPos.divideScalar(ptsW.length);
     } else {
-      const uvAttr  = layer.mesh.geometry.attributes['uv']       as THREE.BufferAttribute | undefined;
+      const uvAttr = layer.mesh.geometry.attributes['uv'] as THREE.BufferAttribute | undefined;
       const posAttr = layer.mesh.geometry.attributes['position'] as THREE.BufferAttribute | undefined;
       if (!uvAttr || !posAttr) return null;
       const avgU = points.reduce((s, p) => s + p.u, 0) / points.length;
       const avgV = points.reduce((s, p) => s + p.v, 0) / points.length;
-      let closestIdx = 0, closestDist = Infinity;
+      let closestIdx = 0,
+        closestDist = Infinity;
       for (let i = 0; i < uvAttr.count; i++) {
-        const d = (uvAttr.getX(i)-avgU)**2 + (uvAttr.getY(i)-avgV)**2;
-        if (d < closestDist) { closestDist = d; closestIdx = i; }
+        const d = (uvAttr.getX(i) - avgU) ** 2 + (uvAttr.getY(i) - avgV) ** 2;
+        if (d < closestDist) {
+          closestDist = d;
+          closestIdx = i;
+        }
       }
-      worldPos = new THREE.Vector3(
-        posAttr.getX(closestIdx), posAttr.getY(closestIdx), posAttr.getZ(closestIdx)
-      ).applyMatrix4(layer.mesh.matrixWorld);
+      worldPos = new THREE.Vector3(posAttr.getX(closestIdx), posAttr.getY(closestIdx), posAttr.getZ(closestIdx)).applyMatrix4(
+        layer.mesh.matrixWorld,
+      );
     }
 
     if (!normAttr) return { worldPos, dir: worldPos.clone().sub(this.modelCenter).normalize() };
@@ -494,23 +523,30 @@ export class BodySceneEngine {
     const wp = layer.worldPositions;
     let minDist2 = Infinity;
     for (let i = 0, n = normAttr.count; i < n; i++) {
-      const dx = wp[i*3]-worldPos.x, dy = wp[i*3+1]-worldPos.y, dz = wp[i*3+2]-worldPos.z;
-      const d2 = dx*dx + dy*dy + dz*dz;
+      const dx = wp[i * 3] - worldPos.x,
+        dy = wp[i * 3 + 1] - worldPos.y,
+        dz = wp[i * 3 + 2] - worldPos.z;
+      const d2 = dx * dx + dy * dy + dz * dz;
       if (d2 < minDist2) minDist2 = d2;
     }
     const searchR2 = Math.max(minDist2 * 16, 1e-6);
     const avg = new THREE.Vector3();
     let count = 0;
     for (let i = 0, n = normAttr.count; i < n; i++) {
-      const dx = wp[i*3]-worldPos.x, dy = wp[i*3+1]-worldPos.y, dz = wp[i*3+2]-worldPos.z;
-      if (dx*dx + dy*dy + dz*dz <= searchR2) {
-        avg.x += normAttr.getX(i); avg.y += normAttr.getY(i); avg.z += normAttr.getZ(i);
+      const dx = wp[i * 3] - worldPos.x,
+        dy = wp[i * 3 + 1] - worldPos.y,
+        dz = wp[i * 3 + 2] - worldPos.z;
+      if (dx * dx + dy * dy + dz * dz <= searchR2) {
+        avg.x += normAttr.getX(i);
+        avg.y += normAttr.getY(i);
+        avg.z += normAttr.getZ(i);
         count++;
       }
     }
-    const dir = count > 0
-      ? avg.divideScalar(count).transformDirection(layer.mesh.matrixWorld).normalize()
-      : worldPos.clone().sub(this.modelCenter).normalize();
+    const dir =
+      count > 0
+        ? avg.divideScalar(count).transformDirection(layer.mesh.matrixWorld).normalize()
+        : worldPos.clone().sub(this.modelCenter).normalize();
     return { worldPos, dir };
   }
 
@@ -527,24 +563,29 @@ export class BodySceneEngine {
 
   captureOverview(side: 'front' | 'back'): string {
     if (this.disposed) return '';
-    const savedPos    = this.camera.position.clone();
+    const savedPos = this.camera.position.clone();
     const savedTarget = this.controls.target.clone();
-    const savedFocus  = this._focusActive;
+    const savedFocus = this._focusActive;
     this._focusActive = false;
 
     const vFov = (this.camera.fov * Math.PI) / 180;
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * this.camera.aspect);
-    const distV = (this.modelSize.y / 2) / Math.tan(vFov / 2);
-    const distH = (this.modelSize.x / 2) / Math.tan(hFov / 2);
-    const dist  = Math.max(distV, distH, this.modelRadius) * 1.25;
+    const distV = this.modelSize.y / 2 / Math.tan(vFov / 2);
+    const distH = this.modelSize.x / 2 / Math.tan(hFov / 2);
+    const dist = Math.max(distV, distH, this.modelRadius) * 1.25;
 
     const zOffset = side === 'front' ? dist : -dist;
     this.camera.position.set(this.modelCenter.x, this.modelCenter.y, this.modelCenter.z + zOffset);
     this.controls.target.copy(this.modelCenter);
     this.controls.update();
 
+    this.markerGroup.visible = true;
+    this.positionMarkersForCapture(side);
+    this.renderer.render(this.scene, this.camera);
+    this.rescaleMarkers(39);
     this.renderer.render(this.scene, this.camera);
     const dataUrl = this.renderer.domElement.toDataURL('image/jpeg', 0.85);
+    this.markerGroup.visible = false;
 
     this._focusActive = savedFocus;
     this.camera.position.copy(savedPos);
@@ -562,9 +603,9 @@ export class BodySceneEngine {
     const zone = this.resolveZone(layer, points);
     if (!zone) return '';
     const dist = this.modelRadius * 0.45;
-    const savedPos    = this.camera.position.clone();
+    const savedPos = this.camera.position.clone();
     const savedTarget = this.controls.target.clone();
-    const savedFocus  = this._focusActive;
+    const savedFocus = this._focusActive;
     this._focusActive = false;
     this.camera.position.copy(zone.worldPos).addScaledVector(zone.dir, dist);
     this.controls.target.copy(zone.worldPos);
@@ -586,18 +627,13 @@ export class BodySceneEngine {
   raycastFromScreen(clientX: number, clientY: number): RaycastHit | null {
     const rect = this.renderer.domElement.getBoundingClientRect();
     if (!rect.width || !rect.height) return null;
-    const pointer = new THREE.Vector2(
-      ((clientX - rect.left) / rect.width)  * 2 - 1,
-      -((clientY - rect.top)  / rect.height) * 2 + 1,
-    );
+    const pointer = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
     this.raycaster.setFromCamera(pointer, this.camera);
     const hits = this.raycaster.intersectObjects(this.raycastTargets, false);
-    const hit  = hits.find(h => !!h.uv);
+    const hit = hits.find((h) => !!h.uv);
     if (!hit?.uv) return null;
     if (!this.paintLayers.has(hit.object.name)) return null;
-    const faceNormal = hit.face!.normal.clone()
-      .transformDirection(hit.object.matrixWorld)
-      .normalize();
+    const faceNormal = hit.face!.normal.clone().transformDirection(hit.object.matrixWorld).normalize();
     return {
       meshName: hit.object.name,
       uv: { u: hit.uv.x, v: hit.uv.y, wx: hit.point.x, wy: hit.point.y, wz: hit.point.z },
@@ -625,7 +661,9 @@ export class BodySceneEngine {
     const worldR = brushRadius * this.modelRadius;
     const r2 = worldR * worldR;
     const arr = zoneColorAttr.array as Float32Array;
-    const px = worldPoint.x, py = worldPoint.y, pz = worldPoint.z;
+    const px = worldPoint.x,
+      py = worldPoint.y,
+      pz = worldPoint.z;
     const n = zoneColorAttr.count;
     const r = parseInt(colorHex.slice(1, 3), 16) / 255;
     const g = parseInt(colorHex.slice(3, 5), 16) / 255;
@@ -636,10 +674,10 @@ export class BodySceneEngine {
       const dy = py - worldPositions[i * 3 + 1];
       const dz = pz - worldPositions[i * 3 + 2];
       if (dx * dx + dy * dy + dz * dz >= r2) continue;
-      arr[i * 4]     = r;
+      arr[i * 4] = r;
       arr[i * 4 + 1] = g;
       arr[i * 4 + 2] = b;
-      arr[i * 4 + 3] = 0.40;
+      arr[i * 4 + 3] = 0.4;
       dirty = true;
     }
     if (dirty) zoneColorAttr.needsUpdate = true;
@@ -649,12 +687,19 @@ export class BodySceneEngine {
    * au lieu de N_points parcours. Les couleurs et rayons sont pré-calculés par drag.
    * Sémantique identique : last drag wins (les drags sont appliqués dans l'ordre).
    */
-  replayZoneDragsBatch(drags: ReadonlyArray<{
-    meshName: string; colorHex: string; brushRadius: number;
-    points: ReadonlyArray<{ wx: number; wy: number; wz: number }>;
-  }>): void {
+  replayZoneDragsBatch(
+    drags: ReadonlyArray<{
+      meshName: string;
+      colorHex: string;
+      brushRadius: number;
+      points: ReadonlyArray<{ wx: number; wy: number; wz: number }>;
+    }>,
+  ): void {
     type PreparedDrag = {
-      r: number; g: number; b: number; r2: number;
+      r: number;
+      g: number;
+      b: number;
+      r2: number;
       points: ReadonlyArray<{ wx: number; wy: number; wz: number }>;
     };
 
@@ -663,9 +708,9 @@ export class BodySceneEngine {
     for (const drag of drags) {
       const worldR = drag.brushRadius * this.modelRadius;
       const prepared: PreparedDrag = {
-        r:  parseInt(drag.colorHex.slice(1, 3), 16) / 255,
-        g:  parseInt(drag.colorHex.slice(3, 5), 16) / 255,
-        b:  parseInt(drag.colorHex.slice(5, 7), 16) / 255,
+        r: parseInt(drag.colorHex.slice(1, 3), 16) / 255,
+        g: parseInt(drag.colorHex.slice(3, 5), 16) / 255,
+        b: parseInt(drag.colorHex.slice(5, 7), 16) / 255,
         r2: worldR * worldR,
         points: drag.points,
       };
@@ -689,12 +734,14 @@ export class BodySceneEngine {
 
         for (const d of meshDrags) {
           for (const p of d.points) {
-            const dx = p.wx - vx, dy = p.wy - vy, dz = p.wz - vz;
+            const dx = p.wx - vx,
+              dy = p.wy - vy,
+              dz = p.wz - vz;
             if (dx * dx + dy * dy + dz * dz < d.r2) {
-              arr[i * 4]     = d.r;
+              arr[i * 4] = d.r;
               arr[i * 4 + 1] = d.g;
               arr[i * 4 + 2] = d.b;
-              arr[i * 4 + 3] = 0.40;
+              arr[i * 4 + 3] = 0.4;
               dirty = true;
               break; // un seul point suffit pour ce drag
             }
@@ -741,15 +788,17 @@ export class BodySceneEngine {
     const pg = tc.g;
     const pb = tc.b;
     const arr = colorAttr.array as Float32Array;
-    const px = worldPoint.x, py = worldPoint.y, pz = worldPoint.z;
+    const px = worldPoint.x,
+      py = worldPoint.y,
+      pz = worldPoint.z;
     const n = colorAttr.count;
     let dirty = false;
 
     for (let i = 0; i < n; i++) {
-      const dx = px - worldPositions[i*3];
-      const dy = py - worldPositions[i*3+1];
-      const dz = pz - worldPositions[i*3+2];
-      const d2 = dx*dx + dy*dy + dz*dz;
+      const dx = px - worldPositions[i * 3];
+      const dy = py - worldPositions[i * 3 + 1];
+      const dz = pz - worldPositions[i * 3 + 2];
+      const d2 = dx * dx + dy * dy + dz * dz;
       if (d2 >= r2) continue;
 
       const t = 1 - Math.sqrt(d2) / worldRadius; // 0..1
@@ -758,15 +807,15 @@ export class BodySceneEngine {
 
       const base = i * 4;
       const existA = arr[base + 3];
-      const newA   = strokeA + existA * (1 - strokeA);
+      const newA = strokeA + existA * (1 - strokeA);
       if (newA < 0.001) continue;
 
       // Compositing "new over existing" — le dernier trait dessiné passe au-dessus
       const blend = strokeA / newA;
-      arr[base]   += (pr - arr[base])   * blend;
-      arr[base+1] += (pg - arr[base+1]) * blend;
-      arr[base+2] += (pb - arr[base+2]) * blend;
-      arr[base+3]  = newA;
+      arr[base] += (pr - arr[base]) * blend;
+      arr[base + 1] += (pg - arr[base + 1]) * blend;
+      arr[base + 2] += (pb - arr[base + 2]) * blend;
+      arr[base + 3] = newA;
       dirty = true;
     }
 
@@ -780,13 +829,14 @@ export class BodySceneEngine {
       layer.colorAttr.needsUpdate = true;
     }
     for (const zone of zones) {
-      const type  = getPainType(zone.type);
+      const type = getPainType(zone.type);
       const layer = this.paintLayers.get(zone.meshName);
       if (!layer) continue;
       for (const pt of zone.points) {
-        const wp = (pt.wx !== undefined && pt.wy !== undefined && pt.wz !== undefined)
-          ? new THREE.Vector3(pt.wx, pt.wy, pt.wz)
-          : this.uvToWorldPoint(layer, pt.u, pt.v);
+        const wp =
+          pt.wx !== undefined && pt.wy !== undefined && pt.wz !== undefined
+            ? new THREE.Vector3(pt.wx, pt.wy, pt.wz)
+            : this.uvToWorldPoint(layer, pt.u, pt.v);
         this.paintAt(zone.meshName, wp, type.color, zone.brushRadius);
       }
     }
@@ -795,31 +845,34 @@ export class BodySceneEngine {
   /** Fallback pour les anciens points sans coordonnées monde : sommet UV le plus proche. */
   private uvToWorldPoint(layer: PaintLayer, u: number, v: number): THREE.Vector3 {
     const uvAttr = layer.mesh.geometry.attributes['uv'] as THREE.BufferAttribute;
-    let best = 0, bestD = Infinity;
+    let best = 0,
+      bestD = Infinity;
     for (let i = 0; i < uvAttr.count; i++) {
-      const d = (uvAttr.getX(i)-u)**2 + (uvAttr.getY(i)-v)**2;
-      if (d < bestD) { bestD = d; best = i; }
+      const d = (uvAttr.getX(i) - u) ** 2 + (uvAttr.getY(i) - v) ** 2;
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
     }
-    return new THREE.Vector3(
-      layer.worldPositions[best*3],
-      layer.worldPositions[best*3+1],
-      layer.worldPositions[best*3+2],
-    );
+    return new THREE.Vector3(layer.worldPositions[best * 3], layer.worldPositions[best * 3 + 1], layer.worldPositions[best * 3 + 2]);
   }
 
   private applyKeyboardCamera(): void {
-    const hasArrow = this._keysPressed.has('ArrowLeft') || this._keysPressed.has('ArrowRight')
-                  || this._keysPressed.has('ArrowUp')   || this._keysPressed.has('ArrowDown');
+    const hasArrow =
+      this._keysPressed.has('ArrowLeft') ||
+      this._keysPressed.has('ArrowRight') ||
+      this._keysPressed.has('ArrowUp') ||
+      this._keysPressed.has('ArrowDown');
     if (!hasArrow) return;
     if (this._focusActive) this._focusActive = false;
 
     const offset = new THREE.Vector3().subVectors(this.camera.position, this.controls.target);
     const spherical = new THREE.Spherical().setFromVector3(offset);
 
-    if (this._keysPressed.has('ArrowLeft'))  spherical.theta -= this._arrowSpeed;
+    if (this._keysPressed.has('ArrowLeft')) spherical.theta -= this._arrowSpeed;
     if (this._keysPressed.has('ArrowRight')) spherical.theta += this._arrowSpeed;
-    if (this._keysPressed.has('ArrowUp'))    spherical.phi   -= this._arrowSpeed;
-    if (this._keysPressed.has('ArrowDown'))  spherical.phi   += this._arrowSpeed;
+    if (this._keysPressed.has('ArrowUp')) spherical.phi -= this._arrowSpeed;
+    if (this._keysPressed.has('ArrowDown')) spherical.phi += this._arrowSpeed;
 
     spherical.phi = Math.max(0.05, Math.min(Math.PI - 0.05, spherical.phi));
     spherical.makeSafe();
@@ -827,9 +880,13 @@ export class BodySceneEngine {
     this.camera.position.copy(this.controls.target).add(offset);
   }
 
-  setControlsEnabled(enabled: boolean): void { this.controls.enabled = enabled; }
+  setControlsEnabled(enabled: boolean): void {
+    this.controls.enabled = enabled;
+  }
 
-  get paintableMeshNames(): string[] { return Array.from(this.paintLayers.keys()); }
+  get paintableMeshNames(): string[] {
+    return Array.from(this.paintLayers.keys());
+  }
 
   // -------------------------------------------------------------------------
   // Cycle de vie
@@ -858,7 +915,139 @@ export class BodySceneEngine {
     this.applyKeyboardCamera();
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
+    if (this.markerGroup.visible && this.markerSprites.size > 0) {
+      this.rescaleMarkers(33);
+    }
   };
+
+  private rescaleMarkers(badgePx: number): void {
+    const tanHalfFov = Math.tan((this.camera.fov * Math.PI) / 180 / 2);
+    const h = this.container.clientHeight;
+    for (const { sprite } of this.markerSprites.values()) {
+      const dist = this.camera.position.distanceTo(sprite.position);
+      const s = (badgePx * (2 * tanHalfFov * dist)) / h;
+      sprite.scale.setScalar(s);
+    }
+  }
+
+  updateZoneMarkers(zones: PainZone[], selectedId: string | null): void {
+    const activeIds = new Set(zones.map((z) => z.id));
+    for (const [id, { sprite, texture, line }] of this.markerSprites) {
+      if (!activeIds.has(id)) {
+        this.markerGroup.remove(sprite);
+        this.markerGroup.remove(line);
+        (sprite.material as THREE.SpriteMaterial).dispose();
+        (line.material as THREE.LineBasicMaterial).dispose();
+        line.geometry.dispose();
+        texture.dispose();
+        this.markerSprites.delete(id);
+      }
+    }
+
+    for (let i = 0; i < zones.length; i++) {
+      const zone = zones[i];
+      const pts = zone.points.filter((p) => p.wx !== undefined);
+      if (!pts.length) continue;
+
+      let sx = 0,
+        sy = 0,
+        sz = 0;
+      for (const p of pts) {
+        sx += p.wx!;
+        sy += p.wy!;
+        sz += p.wz!;
+      }
+      const n = pts.length;
+      const surfacePt = new THREE.Vector3(sx / n, sy / n, sz / n);
+      // Intersection rayon (modelCenter → surfacePt) avec l'ellipse XY (Z fixé au centre)
+      const dx = surfacePt.x - this.modelCenter.x;
+      const dy = surfacePt.y - this.modelCenter.y;
+      const rx = (this.modelSize.x / 2) * 1.25;
+      const ry = (this.modelSize.y / 2) * 1.1;
+      const t = 1 / Math.sqrt((dx / rx) ** 2 + (dy / ry) ** 2 || 1);
+      const labelPos = new THREE.Vector3(this.modelCenter.x + dx * t, this.modelCenter.y + dy * t, this.modelCenter.z);
+
+      const number = i + 1;
+      const color = getPainType(zone.type).color;
+      const isSelected = zone.id === selectedId;
+
+      const existing = this.markerSprites.get(zone.id);
+      if (!existing) {
+        const texture = this.createBadgeTexture(number, color);
+        const spriteMat = new THREE.SpriteMaterial({
+          map: texture,
+          depthTest: false,
+          depthWrite: false,
+          transparent: true,
+          alphaTest: 0.01,
+          sizeAttenuation: true,
+        });
+        const sprite = new THREE.Sprite(spriteMat);
+        sprite.renderOrder = 3;
+
+        const lineGeo = new THREE.BufferGeometry().setFromPoints([surfacePt, labelPos]);
+        const lineMat = new THREE.LineBasicMaterial({
+          color: new THREE.Color(color),
+          transparent: true,
+          opacity: 0.8,
+          depthTest: false,
+          depthWrite: false,
+        });
+        const line = new THREE.Line(lineGeo, lineMat);
+        line.renderOrder = 2;
+
+        this.markerGroup.add(sprite);
+        this.markerGroup.add(line);
+        this.markerSprites.set(zone.id, { sprite, texture, line, surfacePt });
+        sprite.position.copy(labelPos);
+        sprite.userData['selected'] = isSelected;
+      } else {
+        existing.sprite.userData['selected'] = isSelected;
+      }
+    }
+  }
+
+  private positionMarkersForCapture(side: 'front' | 'back'): void {
+    const rz = (this.modelSize.z / 2) * 1.2;
+    const z = this.modelCenter.z + (side === 'front' ? rz : -rz);
+    for (const { sprite, line, surfacePt } of this.markerSprites.values()) {
+      const onFront = surfacePt.z >= this.modelCenter.z;
+      const visible = side === 'front' ? onFront : !onFront;
+      sprite.visible = visible;
+      line.visible = visible;
+      if (!visible) continue;
+      sprite.position.z = z;
+      const posAttr = line.geometry.attributes['position'] as THREE.BufferAttribute;
+      posAttr.setXYZ(0, surfacePt.x, surfacePt.y, surfacePt.z);
+      posAttr.setZ(1, z);
+      posAttr.needsUpdate = true;
+    }
+  }
+
+  private createBadgeTexture(number: number, color: string): THREE.CanvasTexture {
+    const size = 64;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+    const cx = size / 2,
+      cy = size / 2,
+      r = 26;
+    ctx.clearRect(0, 0, size, size);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    ctx.fillStyle = 'white';
+    ctx.font = `bold ${number >= 10 ? 20 : 24}px system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(number), cx, cy);
+    return new THREE.CanvasTexture(canvas);
+  }
 
   dispose(): void {
     this.disposed = true;
@@ -866,6 +1055,17 @@ export class BodySceneEngine {
     this.resizeObserver.disconnect();
     document.removeEventListener('keydown', this._onKeyDown);
     document.removeEventListener('keyup', this._onKeyUp);
+    for (const { sprite, texture, line } of this.markerSprites.values()) {
+      this.markerGroup.remove(sprite);
+      this.markerGroup.remove(line);
+      (sprite.material as THREE.SpriteMaterial).dispose();
+      (line.material as THREE.LineBasicMaterial).dispose();
+      line.geometry.dispose();
+      texture.dispose();
+    }
+    this.markerSprites.clear();
+    this.scene.remove(this.markerGroup);
+
     this.controls.dispose();
 
     for (const layer of this.paintLayers.values()) {
@@ -878,7 +1078,7 @@ export class BodySceneEngine {
     this.scene.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
         obj.geometry.dispose();
-        if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+        if (Array.isArray(obj.material)) obj.material.forEach((m) => m.dispose());
         else obj.material?.dispose();
       }
     });

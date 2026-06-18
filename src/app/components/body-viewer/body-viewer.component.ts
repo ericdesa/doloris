@@ -76,6 +76,13 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
       }
     });
 
+    // Badges numérotés billboard dans la scène 3D
+    effect(() => {
+      const zones = this.painData.zones();
+      const selectedId = this.painData.selectedZoneId();
+      this.engine?.updateZoneMarkers(zones, selectedId);
+    });
+
     // Lazy-render : déclenche le calcul vertex la première fois que l'overlay est activé
     effect(() => {
       if (this.showZoneMap() && !untracked(() => this.zoneMapRendered())) {
@@ -100,6 +107,7 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
       console.timeEnd("[doloris] loadModel");
 
       this.engine.redrawAll(this.painData.zones());
+      this.engine.updateZoneMarkers(this.painData.zones(), this.painData.selectedZoneId());
       this.painData.captureZone.set((m, p) => this.engine!.captureZone(m, p));
       this.painData.captureOverview.set((side) => this.engine!.captureOverview(side));
     } catch (err) {
