@@ -217,3 +217,47 @@
     flex: 1;
   }
 }
+
+.merge-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  border: 1px dashed var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: var(--color-ink);
+
+  .btn {
+    flex: none;
+    font-size: 0.75rem;
+    padding: 3px 10px;
+  }
+}
+
+.merge-target-btn {
+  width: 100%;
+  padding: 7px 12px;
+  border: none;
+  border-top: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-primary) 7%, transparent);
+  color: var(--color-primary);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  }
+}
+
+.zone-list__item--merge-source {
+  opacity: 0.4;
+  pointer-events: none;
+}

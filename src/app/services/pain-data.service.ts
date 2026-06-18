@@ -165,6 +165,25 @@ export class PainDataService {
     this.redrawTick.update((n) => n + 1);
   }
 
+  mergeZones(sourceId: string, targetId: string): void {
+    const source = this.zones().find((z) => z.id === sourceId);
+    const target = this.zones().find((z) => z.id === targetId);
+    if (!source || !target || sourceId === targetId) return;
+    this.zones.update((zones) =>
+      zones
+        .filter((z) => z.id !== sourceId)
+        .map((z) =>
+          z.id === targetId
+            ? { ...z, points: source.points, updatedAt: new Date().toISOString() }
+            : z,
+        ),
+    );
+    if (this.selectedZoneId() === sourceId) {
+      this.selectZone(targetId);
+    }
+    this.redrawTick.update((n) => n + 1);
+  }
+
   removeLastZone(): void {
     const zones = this.zones();
     if (zones.length === 0) return;

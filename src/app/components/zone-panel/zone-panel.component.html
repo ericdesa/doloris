@@ -28,6 +28,14 @@
         3D.
       </p>
     } @else {
+      @if (mergingFromZoneId()) {
+        <div class="merge-banner">
+          <span>Choisissez la zone cible (ses tracés seront remplacés)</span>
+          <button type="button" class="btn btn--ghost" (click)="cancelMerge()">
+            Annuler
+          </button>
+        </div>
+      }
       <ul class="zone-list">
         @for (zone of zonesNewestFirst(); track zone.id; let i = $index) {
           @let zoneNumber = painData.zoneCount() - i;
@@ -35,6 +43,9 @@
             class="zone-list__item"
             [class.zone-list__item--active]="
               painData.selectedZoneId() === zone.id
+            "
+            [class.zone-list__item--merge-source]="
+              mergingFromZoneId() === zone.id
             "
             [style.--zone-color]="getPainType(zone.type).color"
           >
@@ -57,6 +68,16 @@
                 painData.selectedZoneId() === zone.id ? "−" : "+"
               }}</span>
             </button>
+
+            @if (mergingFromZoneId() && mergingFromZoneId() !== zone.id) {
+              <button
+                type="button"
+                class="merge-target-btn"
+                (click)="confirmMerge(zone)"
+              >
+                ← Fusionner ici
+              </button>
+            }
 
             @if (painData.selectedZoneId() === zone.id) {
               <div class="zone-detail">
@@ -157,10 +178,18 @@
                 <div class="zone-detail__actions">
                   <button
                     type="button"
+                    class="btn btn--ghost"
+                    [disabled]="painData.zoneCount() < 2"
+                    (click)="startMerge(zone)"
+                  >
+                    Fusionner vers…
+                  </button>
+                  <button
+                    type="button"
                     class="btn btn--ghost btn--danger"
                     (click)="deleteZone(zone)"
                   >
-                    Supprimer cette zone
+                    Supprimer
                   </button>
                 </div>
               </div>

@@ -20,6 +20,8 @@ export class ZonePanelComponent {
   readonly getPainType = getPainType;
   readonly typeDropdownOpen = signal(false);
 
+  readonly mergingFromZoneId = signal<string | null>(null);
+
   selectZone(zone: PainZone): void {
     if (this.painData.selectedZoneId() === zone.id) {
       this.painData.selectZone(null);
@@ -54,6 +56,30 @@ export class ZonePanelComponent {
     const has = zone.characteristics.includes(characteristic);
     const next = has ? zone.characteristics.filter((c) => c !== characteristic) : [...zone.characteristics, characteristic];
     this.painData.updateZone(zone.id, { characteristics: next });
+  }
+
+  startMerge(zone: PainZone): void {
+    this.mergingFromZoneId.set(zone.id);
+    this.painData.selectZone(null);
+  }
+
+  cancelMerge(): void {
+    this.mergingFromZoneId.set(null);
+  }
+
+  confirmMerge(targetZone: PainZone): void {
+    const sourceId = this.mergingFromZoneId();
+    if (!sourceId) return;
+    const sourceZone = this.painData.zones().find((z) => z.id === sourceId);
+    const sourceLabel = sourceZone?.bodyPartLabel ?? 'cette zone';
+    if (
+      !window.confirm(
+        `Fusionner « ${sourceLabel} » dans « ${targetZone.bodyPartLabel} » ?\nLes tracés de la source remplaceront ceux de la cible.`,
+      )
+    )
+      return;
+    this.painData.mergeZones(sourceId, targetZone.id);
+    this.mergingFromZoneId.set(null);
   }
 
   deleteZone(zone: PainZone): void {
