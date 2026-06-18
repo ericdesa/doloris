@@ -1,11 +1,4 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  inject,
-  signal,
-  ElementRef,
-  HostListener,
-} from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, ElementRef, HostListener } from '@angular/core';
 import { ProjectService } from '../../services/project.service';
 
 @Component({

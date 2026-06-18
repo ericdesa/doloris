@@ -36,14 +36,7 @@
 
       <!-- Cancel -->
       <div class="tb-group">
-        <button
-          type="button"
-          class="tb-btn"
-          (click)="painData.removeLastZone()"
-          [disabled]="painData.zoneCount() === 0"
-        >
-          ↩ Annuler
-        </button>
+        <button type="button" class="tb-btn" (click)="painData.removeLastZone()" [disabled]="painData.zoneCount() === 0">↩ Annuler</button>
       </div>
     </div>
 
@@ -69,14 +62,7 @@
           ✎ Zones
         </button>
       }
-      <button
-        type="button"
-        class="viewer__recenter"
-        (click)="resetView()"
-        title="Recentrer la vue sur le modèle"
-      >
-        ⤢ Recentrer
-      </button>
+      <button type="button" class="viewer__recenter" (click)="resetView()" title="Recentrer la vue sur le modèle">⤢ Recentrer</button>
     </div>
 
     <!-- Palette de dessin de zones -->
@@ -99,16 +85,9 @@
         <div class="zone-palette__row">
           <span class="zone-palette__label">Couleur</span>
           @if (activePaintZoneKey(); as key) {
-            <input
-              type="color"
-              class="cep__color"
-              [value]="zoneMapService.colors()[key]"
-              (input)="onZoneColorChange(key, $event)"
-            />
+            <input type="color" class="cep__color" [value]="zoneMapService.colors()[key]" (input)="onZoneColorChange(key, $event)" />
           }
-          <button type="button" class="tb-btn" (click)="resetColors()">
-            Réinit.
-          </button>
+          <button type="button" class="tb-btn" (click)="resetColors()">Réinit.</button>
         </div>
         <div class="zone-palette__row">
           <span class="zone-palette__label">Pinceau</span>
@@ -122,13 +101,7 @@
             (input)="onZoneBrushChange($event)"
           />
         </div>
-        <button
-          type="button"
-          class="tb-btn tb-btn--danger zone-palette__clear"
-          (click)="clearZoneMap()"
-        >
-          ✕ Effacer la carte
-        </button>
+        <button type="button" class="tb-btn tb-btn--danger zone-palette__clear" (click)="clearZoneMap()">✕ Effacer la carte</button>
       </div>
     }
   }
@@ -136,8 +109,7 @@
   <div class="viewer__hint">
     @if (zoneDrawMode()) {
       @if (activePaintZoneKey()) {
-        Cliquer et glisser pour peindre la zone · choisir une zone dans la
-        palette
+        Cliquer et glisser pour peindre la zone · choisir une zone dans la palette
       } @else {
         Sélectionnez une zone dans la palette pour commencer à peindre
       }

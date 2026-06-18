@@ -19,7 +19,9 @@
   cursor: pointer;
   box-shadow: var(--shadow-sm);
   max-width: 220px;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 
   &:hover,
   &--open {
@@ -124,7 +126,10 @@
   border-radius: var(--radius-sm);
   opacity: 0;
   flex: none;
-  transition: color 0.12s, background 0.12s, opacity 0.12s;
+  transition:
+    color 0.12s,
+    background 0.12s,
+    opacity 0.12s;
 
   &:hover {
     color: var(--color-primary);
@@ -167,7 +172,9 @@
   font-size: 0.83rem;
   color: var(--color-muted);
   border-radius: var(--radius-sm);
-  transition: color 0.12s, background 0.12s;
+  transition:
+    color 0.12s,
+    background 0.12s;
 
   &:hover {
     color: var(--color-primary);

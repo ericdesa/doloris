@@ -20,13 +20,13 @@ export class ReportComponent {
   private readonly share = inject(ShareService);
   private readonly projectService = inject(ProjectService);
 
-  private readonly commentKey = computed(() =>
-    `pain-mapper:report-comment:${this.projectService.currentProjectId()}`
-  );
+  private readonly commentKey = computed(() => `pain-mapper:report-comment:${this.projectService.currentProjectId()}`);
 
   readonly zones = this.painData.zones;
   readonly today = new Date().toLocaleDateString('fr-FR', {
-    day: 'numeric', month: 'long', year: 'numeric',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
   });
 
   readonly getPainType = getPainType;
@@ -37,7 +37,7 @@ export class ReportComponent {
   readonly overviewImages = this.painData.overviewImages;
 
   readonly copied = signal(false);
-  readonly shareUrl = computed(() => this.zones().length > 0 ? this.share.getShareUrl(this.zones()) : null);
+  readonly shareUrl = computed(() => (this.zones().length > 0 ? this.share.getShareUrl(this.zones()) : null));
   readonly isSharedReport = signal(false);
 
   constructor() {
@@ -116,5 +116,4 @@ export class ReportComponent {
     this.copied.set(true);
     setTimeout(() => this.copied.set(false), 2000);
   }
-
 }

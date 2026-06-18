@@ -1,4 +1,16 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject, untracked, ChangeDetectionStrategy, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  ViewChild,
+  computed,
+  effect,
+  inject,
+  untracked,
+  ChangeDetectionStrategy,
+  signal,
+} from '@angular/core';
 
 import { BodySceneEngine, RaycastHit } from '../../services/body-scene.engine';
 import { PainDataService } from '../../services/pain-data.service';
@@ -9,18 +21,18 @@ import { UvPoint } from '../../models/pain-zone.model';
 import { ZoneDrag } from '../../models/zone-drag.model';
 
 @Component({
-    selector: 'app-body-viewer',
-    imports: [],
-    templateUrl: './body-viewer.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    styleUrl: './body-viewer.component.scss'
+  selector: 'app-body-viewer',
+  imports: [],
+  templateUrl: './body-viewer.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  styleUrl: './body-viewer.component.scss',
 })
 export class BodyViewerComponent implements AfterViewInit, OnDestroy {
   @ViewChild('viewerContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
 
-  readonly painData    = inject(PainDataService);
+  readonly painData = inject(PainDataService);
   readonly zoneMapService = inject(ZoneMapService);
-  readonly painTypes   = PAIN_TYPES;
+  readonly painTypes = PAIN_TYPES;
 
   private engine: BodySceneEngine | null = null;
 
@@ -35,14 +47,14 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
   private currentZoneMesh: string | null = null;
   private currentZoneDrag: ZoneDrag | null = null;
 
-  readonly isOverBody     = signal(false);
-  readonly debugMode      = signal(new URLSearchParams(window.location.search).has('debug'));
-  readonly isLoading      = signal(true);
-  readonly showZoneMap    = signal(false);
+  readonly isOverBody = signal(false);
+  readonly debugMode = signal(new URLSearchParams(window.location.search).has('debug'));
+  readonly isLoading = signal(true);
+  readonly showZoneMap = signal(false);
   private zoneMapRendered = signal(false);
-  readonly zoneDrawMode   = signal(false);
+  readonly zoneDrawMode = signal(false);
   readonly activePaintZoneKey = signal<string | null>(null);
-  readonly zoneBrushRadius    = signal(0.02);
+  readonly zoneBrushRadius = signal(0.02);
 
   readonly selectedPainType = computed(() => getPainType(this.painData.draft().type));
 
@@ -58,7 +70,7 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
     effect(() => {
       const zoneId = this.painData.focusRequest();
       if (!zoneId) return;
-      const zone = untracked(() => this.painData.zones().find(z => z.id === zoneId));
+      const zone = untracked(() => this.painData.zones().find((z) => z.id === zoneId));
       if (zone) this.engine?.focusOnZone(zone.meshName, zone.points);
     });
 
@@ -88,9 +100,9 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
       if (this.showZoneMap() && !untracked(() => this.zoneMapRendered())) {
         untracked(() => {
           if (!this.engine) return;
-          console.time("[doloris] replayZones (dev)");
+          console.time('[doloris] replayZones (dev)');
           this.engine.replayZoneDragsBatch(this.zoneMapService.drags());
-          console.timeEnd("[doloris] replayZones (dev)");
+          console.timeEnd('[doloris] replayZones (dev)');
           this.zoneMapRendered.set(true);
         });
       }
@@ -98,13 +110,13 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
   }
 
   async ngAfterViewInit(): Promise<void> {
-    console.time("[doloris] init");
+    console.time('[doloris] init');
     const container = this.containerRef.nativeElement;
     this.engine = new BodySceneEngine(container);
     try {
-      console.time("[doloris] loadModel");
+      console.time('[doloris] loadModel');
       await this.engine.loadModel('assets/models/body.glb');
-      console.timeEnd("[doloris] loadModel");
+      console.timeEnd('[doloris] loadModel');
 
       this.engine.redrawAll(this.painData.zones());
       this.engine.updateZoneMarkers(this.painData.zones(), this.painData.selectedZoneId());
@@ -114,7 +126,7 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
       console.error('[doloris] Erreur critique au chargement:', err);
     } finally {
       this.isLoading.set(false);
-      console.timeEnd("[doloris] init");
+      console.timeEnd('[doloris] init');
     }
   }
 
@@ -199,7 +211,9 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
       this.zoneMapService.drags(),
       this.engine.currentModelRadius,
       hit.meshName,
-      hit.worldPoint.x, hit.worldPoint.y, hit.worldPoint.z
+      hit.worldPoint.x,
+      hit.worldPoint.y,
+      hit.worldPoint.z,
     );
     const zone = this.painData.startZone(hit.meshName, label, hit.uv);
     this.painData.selectZone(zone.id);

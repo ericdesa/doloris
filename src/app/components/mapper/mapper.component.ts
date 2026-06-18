@@ -19,7 +19,7 @@ export class MapperComponent {
   readonly zonesDrawerOpen = signal(false);
 
   toggleZonesDrawer(): void {
-    this.zonesDrawerOpen.update(v => !v);
+    this.zonesDrawerOpen.update((v) => !v);
   }
 
   closeZonesDrawer(): void {

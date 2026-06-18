@@ -33,7 +33,10 @@
   color: var(--color-primary-dark);
   cursor: pointer;
   box-shadow: var(--shadow-sm);
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    background 0.15s;
 
   &:hover:not(:disabled) {
     border-color: var(--color-primary);

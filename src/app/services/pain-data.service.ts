@@ -153,9 +153,7 @@ export class PainDataService {
   }
 
   updateZone(zoneId: string, changes: Partial<Omit<PainZone, 'id' | 'points' | 'meshName'>>): void {
-    this.zones.update((zones) =>
-      zones.map((z) => (z.id === zoneId ? { ...z, ...changes, updatedAt: new Date().toISOString() } : z))
-    );
+    this.zones.update((zones) => zones.map((z) => (z.id === zoneId ? { ...z, ...changes, updatedAt: new Date().toISOString() } : z)));
     this.redrawTick.update((n) => n + 1);
   }
 
@@ -199,9 +197,7 @@ export class PainDataService {
       const has = d.characteristics.includes(characteristic);
       return {
         ...d,
-        characteristics: has
-          ? d.characteristics.filter((c) => c !== characteristic)
-          : [...d.characteristics, characteristic],
+        characteristics: has ? d.characteristics.filter((c) => c !== characteristic) : [...d.characteristics, characteristic],
       };
     });
   }

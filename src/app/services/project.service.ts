@@ -18,9 +18,7 @@ export class ProjectService {
   readonly projects = signal<Project[]>([]);
   readonly currentProjectId = signal<string>('');
 
-  readonly currentProject = computed(() =>
-    this.projects().find((p) => p.id === this.currentProjectId()) ?? null
-  );
+  readonly currentProject = computed(() => this.projects().find((p) => p.id === this.currentProjectId()) ?? null);
 
   constructor() {
     this.migrateIfNeeded();
@@ -45,9 +43,7 @@ export class ProjectService {
   renameProject(id: string, name: string): void {
     const trimmed = name.trim();
     if (!trimmed) return;
-    this.projects.update((list) =>
-      list.map((p) => (p.id === id ? { ...p, name: trimmed, updatedAt: now() } : p))
-    );
+    this.projects.update((list) => list.map((p) => (p.id === id ? { ...p, name: trimmed, updatedAt: now() } : p)));
   }
 
   deleteProject(id: string): void {

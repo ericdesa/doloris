@@ -4,11 +4,11 @@ import { PAIN_CHARACTERISTICS, PAIN_TYPES, getPainType, PainTypeId } from '../..
 import { PainZone } from '../../models/pain-zone.model';
 
 @Component({
-    selector: 'app-zone-panel',
-    imports: [],
-    templateUrl: './zone-panel.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    styleUrl: './zone-panel.component.scss'
+  selector: 'app-zone-panel',
+  imports: [],
+  templateUrl: './zone-panel.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  styleUrl: './zone-panel.component.scss',
 })
 export class ZonePanelComponent {
   readonly painData = inject(PainDataService);
@@ -52,9 +52,7 @@ export class ZonePanelComponent {
 
   toggleCharacteristic(zone: PainZone, characteristic: string): void {
     const has = zone.characteristics.includes(characteristic);
-    const next = has
-      ? zone.characteristics.filter((c) => c !== characteristic)
-      : [...zone.characteristics, characteristic];
+    const next = has ? zone.characteristics.filter((c) => c !== characteristic) : [...zone.characteristics, characteristic];
     this.painData.updateZone(zone.id, { characteristics: next });
   }
 
@@ -70,5 +68,4 @@ export class ZonePanelComponent {
       this.painData.clearAll();
     }
   }
-
 }

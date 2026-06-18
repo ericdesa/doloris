@@ -34,7 +34,9 @@
   font-size: 0.875rem;
   font-family: system-ui, sans-serif;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 
   &:hover {
     border-color: #5a7a8a;
@@ -345,8 +347,13 @@ hr {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @media print {
@@ -377,10 +384,18 @@ hr {
   }
 }
 
-.hide-mobile { display: inline; }
-.show-mobile { display: none; }
+.hide-mobile {
+  display: inline;
+}
+.show-mobile {
+  display: none;
+}
 
 @media (max-width: 600px) {
-  .hide-mobile { display: none; }
-  .show-mobile { display: inline; }
+  .hide-mobile {
+    display: none;
+  }
+  .show-mobile {
+    display: inline;
+  }
 }

@@ -1,11 +1,11 @@
-import { Injectable, signal } from "@angular/core";
-import { ZoneDrag } from "../models/zone-drag.model";
-import { ZONE_COLOR_PALETTE } from "../models/body-parts";
-import { defaultMaleZoneDrags } from "./default-male-zone-drags";
+import { Injectable, signal } from '@angular/core';
+import { ZoneDrag } from '../models/zone-drag.model';
+import { ZONE_COLOR_PALETTE } from '../models/body-parts';
+import { defaultMaleZoneDrags } from './default-male-zone-drags';
 
-@Injectable({ providedIn: "root" })
+@Injectable({ providedIn: 'root' })
 export class ZoneMapService {
-  private readonly STORAGE_KEY = "doloris-zone-map";
+  private readonly STORAGE_KEY = 'doloris-zone-map';
 
   readonly drags = signal<ZoneDrag[]>([]);
   readonly colors = signal<Record<string, string>>({ ...ZONE_COLOR_PALETTE });
@@ -19,8 +19,7 @@ export class ZoneMapService {
       if (raw) {
         const data = JSON.parse(raw);
         if (Array.isArray(data.drags)) this.drags.set(data.drags);
-        if (data.colors && typeof data.colors === "object")
-          this.colors.set(data.colors);
+        if (data.colors && typeof data.colors === 'object') this.colors.set(data.colors);
       }
     } catch {
       /* localStorage indisponible ou données corrompues */
@@ -42,5 +41,4 @@ export class ZoneMapService {
   resetColors(): void {
     this.colors.set({ ...ZONE_COLOR_PALETTE });
   }
-
 }

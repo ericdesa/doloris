@@ -3,15 +3,7 @@
  * La couleur associée à chaque type est l'élément central du code couleur
  * affiché sur le modèle 3D et dans la légende.
  */
-export type PainTypeId =
-  | 'burning'
-  | 'stabbing'
-  | 'tingling'
-  | 'aching'
-  | 'cramping'
-  | 'numbness'
-  | 'pressure'
-  | 'other';
+export type PainTypeId = 'burning' | 'stabbing' | 'tingling' | 'aching' | 'cramping' | 'numbness' | 'pressure' | 'other';
 
 export interface PainTypeDefinition {
   id: PainTypeId;
