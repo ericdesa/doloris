@@ -932,6 +932,7 @@ export class BodySceneEngine {
   }
 
   updateZoneMarkers(zones: PainZone[], selectedId: string | null): void {
+    // Cleanup zones that no longer exist
     const activeIds = new Set(zones.map((z) => z.id));
     for (const [id, { sprite, texture, line }] of this.markerSprites) {
       if (!activeIds.has(id)) {
@@ -944,6 +945,19 @@ export class BodySceneEngine {
         this.markerSprites.delete(id);
       }
     }
+
+    const rx = (this.modelSize.x / 2) * 1.25;
+    const ry = (this.modelSize.y / 2) * 1.1;
+
+    // Pass 1: compute geometry for each zone with valid world points
+    const layouts: {
+      zone: PainZone;
+      surfacePt: THREE.Vector3;
+      surfaceNormal: THREE.Vector3;
+      origAngle: number;
+      angle: number;
+      number: number;
+    }[] = [];
 
     for (let i = 0; i < zones.length; i++) {
       const zone = zones[i];
@@ -960,23 +974,67 @@ export class BodySceneEngine {
       }
       const n = pts.length;
       const surfacePt = new THREE.Vector3(sx / n, sy / n, sz / n);
+
       const layer = this.paintLayers.get(zone.meshName);
       const surfaceNormal = layer
         ? (this.computeSurfaceNormal(layer, surfacePt) ?? surfacePt.clone().sub(this.modelCenter).normalize())
         : surfacePt.clone().sub(this.modelCenter).normalize();
-      // Intersection rayon (modelCenter → surfacePt) avec l'ellipse XY (Z fixé au centre)
-      const dx = surfacePt.x - this.modelCenter.x;
-      const dy = surfacePt.y - this.modelCenter.y;
-      const rx = (this.modelSize.x / 2) * 1.25;
-      const ry = (this.modelSize.y / 2) * 1.1;
-      const t = 1 / Math.sqrt((dx / rx) ** 2 + (dy / ry) ** 2 || 1);
-      const labelPos = new THREE.Vector3(this.modelCenter.x + dx * t, this.modelCenter.y + dy * t, this.modelCenter.z);
 
-      const number = i + 1;
+      // Project onto normalised ellipse space to get a uniform angular metric
+      const nx = (surfacePt.x - this.modelCenter.x) / rx;
+      const ny = (surfacePt.y - this.modelCenter.y) / ry;
+      const angle = Math.atan2(ny, nx);
+
+      layouts.push({ zone, surfacePt, surfaceNormal, origAngle: angle, angle, number: i + 1 });
+    }
+
+    // Pass 2: angular de-overlap — bidirectional iterative spreading.
+    // Unlike a forward sweep (which biases all labels to one side and creates long
+    // crossing lines), each iteration pushes overlapping neighbours equally left and
+    // right, keeping labels close to their natural angle.
+    if (layouts.length > 1) {
+      const MIN_GAP = Math.min(Math.PI / 10, (2 * Math.PI) / layouts.length);
+      layouts.sort((a, b) => a.origAngle - b.origAngle);
+
+      for (let iter = 0; iter < 64; iter++) {
+        let moved = false;
+        for (let i = 0; i < layouts.length - 1; i++) {
+          const gap = layouts[i + 1].angle - layouts[i].angle;
+          if (gap < MIN_GAP) {
+            const push = (MIN_GAP - gap) / 2;
+            layouts[i].angle -= push;
+            layouts[i + 1].angle += push;
+            moved = true;
+          }
+        }
+        if (!moved) break;
+      }
+
+      // Anchor: keep the centroid of adjusted angles aligned with the centroid of
+      // original natural angles so labels stay near where they "belong" on the body.
+      const origCenter = layouts.reduce((s, l) => s + l.origAngle, 0) / layouts.length;
+      const adjCenter = layouts.reduce((s, l) => s + l.angle, 0) / layouts.length;
+      const shift = origCenter - adjCenter;
+      for (const l of layouts) l.angle += shift;
+    }
+
+    const rz = (this.modelSize.z / 2) * 0.8;
+
+    // Pass 3: create new sprites or reposition existing ones
+    for (const { zone, surfacePt, surfaceNormal, angle, number } of layouts) {
+      // Labels float in 3D: Z-offset from the surface normal separates front-facing
+      // zones (pushed forward) from back-facing zones (pushed backward), reducing
+      // crossings in the interactive 3D view without affecting the flat captures.
+      const labelPos = new THREE.Vector3(
+        this.modelCenter.x + Math.cos(angle) * rx,
+        this.modelCenter.y + Math.sin(angle) * ry,
+        this.modelCenter.z + surfaceNormal.z * rz,
+      );
+
       const color = getPainType(zone.type).color;
       const isSelected = zone.id === selectedId;
-
       const existing = this.markerSprites.get(zone.id);
+
       if (!existing) {
         const texture = this.createBadgeTexture(number, color);
         const spriteMat = new THREE.SpriteMaterial({
@@ -1007,6 +1065,15 @@ export class BodySceneEngine {
         sprite.position.copy(labelPos);
         sprite.userData['selected'] = isSelected;
       } else {
+        // Reposition after reflow (XY only; Z is managed by positionMarkersForCapture)
+        existing.sprite.position.x = labelPos.x;
+        existing.sprite.position.y = labelPos.y;
+        existing.surfacePt.copy(surfacePt);
+        existing.surfaceNormal.copy(surfaceNormal);
+        const posAttr = existing.line.geometry.attributes['position'] as THREE.BufferAttribute;
+        posAttr.setXYZ(0, surfacePt.x, surfacePt.y, surfacePt.z);
+        posAttr.setXYZ(1, labelPos.x, labelPos.y, existing.sprite.position.z);
+        posAttr.needsUpdate = true;
         existing.sprite.userData['selected'] = isSelected;
       }
     }
