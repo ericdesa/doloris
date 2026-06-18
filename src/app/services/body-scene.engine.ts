@@ -48,7 +48,7 @@ export class BodySceneEngine {
   private readonly markerGroup = new THREE.Group();
   private readonly markerSprites = new Map<
     string,
-    { sprite: THREE.Sprite; texture: THREE.CanvasTexture; line: THREE.Line; surfacePt: THREE.Vector3 }
+    { sprite: THREE.Sprite; texture: THREE.CanvasTexture; line: THREE.Line; surfacePt: THREE.Vector3; surfaceNormal: THREE.Vector3 }
   >();
 
   private modelRoot: THREE.Object3D | null = null;
@@ -481,8 +481,6 @@ export class BodySceneEngine {
   // -------------------------------------------------------------------------
 
   private resolveZone(layer: PaintLayer, points: UvPoint[]): { worldPos: THREE.Vector3; dir: THREE.Vector3 } | null {
-    const normAttr = layer.mesh.geometry.attributes['normal'] as THREE.BufferAttribute | undefined;
-
     // Use wx/wy/wz (raycast world positions) when available — more reliable
     // than UV-centroid lookup which can land on the wrong side of the mesh
     // (e.g. palm vs. back-of-hand share adjacent UV regions).
@@ -516,10 +514,16 @@ export class BodySceneEngine {
       );
     }
 
-    if (!normAttr) return { worldPos, dir: worldPos.clone().sub(this.modelCenter).normalize() };
+    const dir = this.computeSurfaceNormal(layer, worldPos) ?? worldPos.clone().sub(this.modelCenter).normalize();
+    return { worldPos, dir };
+  }
 
-    // Average normals of vertices that are close in world space (not UV space)
-    // so palm and back-of-hand are naturally separated.
+  // Average normals of nearby vertices in world space — used both for focus direction
+  // and front/back visibility classification. World-space proximity avoids UV-space
+  // ambiguities (e.g. palm vs. back-of-hand sharing adjacent UV regions).
+  private computeSurfaceNormal(layer: PaintLayer, worldPos: THREE.Vector3): THREE.Vector3 | null {
+    const normAttr = layer.mesh.geometry.attributes['normal'] as THREE.BufferAttribute | undefined;
+    if (!normAttr) return null;
     const wp = layer.worldPositions;
     let minDist2 = Infinity;
     for (let i = 0, n = normAttr.count; i < n; i++) {
@@ -543,11 +547,8 @@ export class BodySceneEngine {
         count++;
       }
     }
-    const dir =
-      count > 0
-        ? avg.divideScalar(count).transformDirection(layer.mesh.matrixWorld).normalize()
-        : worldPos.clone().sub(this.modelCenter).normalize();
-    return { worldPos, dir };
+    if (count === 0) return null;
+    return avg.divideScalar(count).transformDirection(layer.mesh.matrixWorld).normalize();
   }
 
   focusOnZone(meshName: string, points: UvPoint[]): void {
@@ -959,6 +960,10 @@ export class BodySceneEngine {
       }
       const n = pts.length;
       const surfacePt = new THREE.Vector3(sx / n, sy / n, sz / n);
+      const layer = this.paintLayers.get(zone.meshName);
+      const surfaceNormal = layer
+        ? (this.computeSurfaceNormal(layer, surfacePt) ?? surfacePt.clone().sub(this.modelCenter).normalize())
+        : surfacePt.clone().sub(this.modelCenter).normalize();
       // Intersection rayon (modelCenter → surfacePt) avec l'ellipse XY (Z fixé au centre)
       const dx = surfacePt.x - this.modelCenter.x;
       const dy = surfacePt.y - this.modelCenter.y;
@@ -998,7 +1003,7 @@ export class BodySceneEngine {
 
         this.markerGroup.add(sprite);
         this.markerGroup.add(line);
-        this.markerSprites.set(zone.id, { sprite, texture, line, surfacePt });
+        this.markerSprites.set(zone.id, { sprite, texture, line, surfacePt, surfaceNormal });
         sprite.position.copy(labelPos);
         sprite.userData['selected'] = isSelected;
       } else {
@@ -1010,8 +1015,8 @@ export class BodySceneEngine {
   private positionMarkersForCapture(side: 'front' | 'back'): void {
     const rz = (this.modelSize.z / 2) * 1.2;
     const z = this.modelCenter.z + (side === 'front' ? rz : -rz);
-    for (const { sprite, line, surfacePt } of this.markerSprites.values()) {
-      const onFront = surfacePt.z >= this.modelCenter.z;
+    for (const { sprite, line, surfacePt, surfaceNormal } of this.markerSprites.values()) {
+      const onFront = surfaceNormal.z >= 0;
       const visible = side === 'front' ? onFront : !onFront;
       sprite.visible = visible;
       line.visible = visible;
