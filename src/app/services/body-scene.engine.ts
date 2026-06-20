@@ -64,7 +64,7 @@ export class BodySceneEngine {
   private modelSize = new THREE.Vector3();
 
   private _keysPressed = new Set<string>();
-  private readonly _arrowSpeed = 0.025;
+  private readonly _arrowSpeed = 0.005;
 
   private readonly _onKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Shift') this.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
@@ -867,18 +867,23 @@ export class BodySceneEngine {
     if (!hasArrow) return;
     if (this._focusActive) this._focusActive = false;
 
+    // Déplacement en pan (translation dans le plan de l'écran) : on bouge
+    // ensemble la caméra et la cible le long des axes droite/haut de la caméra.
+    // Le pas est proportionnel à la distance pour une vitesse perçue constante.
     const offset = new THREE.Vector3().subVectors(this.camera.position, this.controls.target);
-    const spherical = new THREE.Spherical().setFromVector3(offset);
+    const step = offset.length() * this._arrowSpeed;
 
-    if (this._keysPressed.has('ArrowLeft')) spherical.theta -= this._arrowSpeed;
-    if (this._keysPressed.has('ArrowRight')) spherical.theta += this._arrowSpeed;
-    if (this._keysPressed.has('ArrowUp')) spherical.phi -= this._arrowSpeed;
-    if (this._keysPressed.has('ArrowDown')) spherical.phi += this._arrowSpeed;
+    const right = new THREE.Vector3().setFromMatrixColumn(this.camera.matrix, 0);
+    const up = new THREE.Vector3().setFromMatrixColumn(this.camera.matrix, 1);
 
-    spherical.phi = Math.max(0.05, Math.min(Math.PI - 0.05, spherical.phi));
-    spherical.makeSafe();
-    offset.setFromSpherical(spherical);
-    this.camera.position.copy(this.controls.target).add(offset);
+    const pan = new THREE.Vector3();
+    if (this._keysPressed.has('ArrowLeft')) pan.addScaledVector(right, -step);
+    if (this._keysPressed.has('ArrowRight')) pan.addScaledVector(right, step);
+    if (this._keysPressed.has('ArrowUp')) pan.addScaledVector(up, step);
+    if (this._keysPressed.has('ArrowDown')) pan.addScaledVector(up, -step);
+
+    this.camera.position.add(pan);
+    this.controls.target.add(pan);
   }
 
   setControlsEnabled(enabled: boolean): void {
