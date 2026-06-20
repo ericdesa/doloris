@@ -259,6 +259,12 @@
   width: 70px;
   accent-color: var(--color-primary);
   cursor: pointer;
+  transition: width 0.15s ease;
+}
+
+// Au survol de la pill, le slider double de largeur pour une saisie plus fine
+.tb-pill:hover .tb-slider {
+  width: 180px;
 }
 
 // ---------------------------------------------------------------------------
