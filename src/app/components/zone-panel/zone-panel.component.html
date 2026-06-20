@@ -98,6 +98,17 @@
 
             @if (painData.selectedZoneId() === zone.id) {
               <div class="zone-detail">
+                <label class="zone-detail__field">
+                  <span>Région</span>
+                  <input
+                    type="text"
+                    class="textarea"
+                    [value]="zone.bodyPartLabel"
+                    (input)="onLabelChange($event, zone)"
+                    placeholder="Nom de la région…"
+                  />
+                </label>
+
                 <div class="zone-detail__field">
                   <span>Type de douleur</span>
                   <div

@@ -53,6 +53,11 @@ export class ZonePanelComponent {
     this.painData.updateZone(zone.id, { notes: value });
   }
 
+  onLabelChange(event: Event, zone: PainZone): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.painData.updateZone(zone.id, { bodyPartLabel: value });
+  }
+
   toggleCharacteristic(zone: PainZone, characteristic: string): void {
     const has = zone.characteristics.includes(characteristic);
     const next = has ? zone.characteristics.filter((c) => c !== characteristic) : [...zone.characteristics, characteristic];
