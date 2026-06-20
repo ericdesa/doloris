@@ -77,7 +77,7 @@
 
   <main class="report__body">
     <div class="report__logo">
-<div>
+    <div>
         <h1>Doloris - Cartographie de la douleur</h1>
         <div class="subtitle">
           Compte-rendu généré le {{ today }} - {{ zones().length }} zone{{
@@ -120,6 +120,17 @@
         <div class="overview__view">
           <div class="overview__img overview__img--loading"></div>
         </div>
+      </div>
+    }
+
+    @if (usedPainTypes().length > 0) {
+      <div class="legend">
+        @for (type of usedPainTypes(); track type.id) {
+          <div class="legend__item">
+            <span class="legend__swatch" [style.background]="type.color"></span>
+            <span class="legend__label">{{ type.label }}</span>
+          </div>
+        }
       </div>
     }
 

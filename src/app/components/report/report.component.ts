@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { PainDataService } from '../../services/pain-data.service';
 import { ShareService } from '../../services/share.service';
 import { ProjectService } from '../../services/project.service';
-import { getPainType } from '../../models/pain-types';
+import { getPainType, PAIN_TYPES } from '../../models/pain-types';
 import { BodyViewerComponent } from '../body-viewer/body-viewer.component';
 
 @Component({
@@ -30,6 +30,11 @@ export class ReportComponent {
   });
 
   readonly getPainType = getPainType;
+
+  readonly usedPainTypes = computed(() => {
+    const used = new Set(this.zones().map((z) => z.type));
+    return PAIN_TYPES.filter((t) => used.has(t.id));
+  });
 
   readonly comment = signal<string>('');
 

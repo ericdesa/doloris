@@ -211,6 +211,31 @@ hr {
   }
 }
 
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 0 0 4px;
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__swatch {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  &__label {
+    font-size: 0.8rem;
+    color: #2e3d45;
+  }
+}
+
 .zone {
   margin-bottom: 20px;
   padding: 14px 16px;
