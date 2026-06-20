@@ -152,9 +152,17 @@ export class PainDataService {
     this.zones.update((zones) => zones.map((z) => (z.id === zoneId ? { ...z, points } : z)));
   }
 
-  updateZone(zoneId: string, changes: Partial<Omit<PainZone, 'id' | 'points' | 'meshName'>>): void {
+  /**
+   * Met à jour une zone. Par défaut, ne redessine PAS les calques 3D : seuls
+   * les changements affectant le rendu (le type, qui détermine la couleur)
+   * doivent passer `redraw = true`. L'intensité, les notes et les
+   * caractéristiques n'impactent pas le tracé 3D.
+   */
+  updateZone(zoneId: string, changes: Partial<Omit<PainZone, 'id' | 'points' | 'meshName'>>, redraw = false): void {
     this.zones.update((zones) => zones.map((z) => (z.id === zoneId ? { ...z, ...changes, updatedAt: new Date().toISOString() } : z)));
-    this.redrawTick.update((n) => n + 1);
+    if (redraw) {
+      this.redrawTick.update((n) => n + 1);
+    }
   }
 
   removeZone(zoneId: string): void {

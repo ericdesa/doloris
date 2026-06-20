@@ -37,7 +37,7 @@ export class ZonePanelComponent {
   }
 
   selectZoneType(zone: PainZone, typeId: PainTypeId): void {
-    this.painData.updateZone(zone.id, { type: typeId });
+    this.painData.updateZone(zone.id, { type: typeId }, true);
     this.painData.updateDraft({ type: typeId });
     this.typeDropdownOpen.set(false);
   }

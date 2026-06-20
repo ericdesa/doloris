@@ -60,6 +60,18 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
 
   readonly zoneEntries = computed(() => Object.entries(this.zoneMapService.colors()));
 
+  /**
+   * Projection des zones limitée aux champs qui influencent les badges 3D
+   * (position, type/couleur, ordre). L'égalité personnalisée évite de
+   * reconstruire les marqueurs lors des éditions d'intensité, de notes ou de
+   * caractéristiques, qui n'ont aucun impact sur les marqueurs.
+   */
+  readonly markerZones = computed(() => this.painData.zones(), {
+    equal: (a, b) =>
+      a.length === b.length &&
+      a.every((z, i) => z.id === b[i].id && z.type === b[i].type && z.points === b[i].points),
+  });
+
   constructor() {
     effect(() => {
       this.painData.redrawTick();
@@ -90,7 +102,7 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
 
     // Badges numérotés billboard dans la scène 3D
     effect(() => {
-      const zones = this.painData.zones();
+      const zones = this.markerZones();
       const selectedId = this.painData.selectedZoneId();
       this.engine?.updateZoneMarkers(zones, selectedId);
     });
