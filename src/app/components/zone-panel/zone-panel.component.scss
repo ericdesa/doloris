@@ -166,6 +166,19 @@
   .slider {
     accent-color: var(--zone-color);
   }
+
+  .checkbox input {
+    accent-color: var(--zone-color);
+  }
+
+  .textarea {
+    caret-color: var(--zone-color);
+
+    &:focus {
+      border-color: var(--zone-color);
+      outline-color: var(--zone-color);
+    }
+  }
 }
 
 .zone-detail__field {
@@ -267,6 +280,12 @@
 
   .btn {
     flex: 1;
+  }
+
+  // Bouton « Fusionner vers… » : couleur du type de douleur
+  .btn--ghost:not(.btn--danger):hover:not(:disabled) {
+    border-color: var(--zone-color);
+    color: var(--zone-color);
   }
 }
 
