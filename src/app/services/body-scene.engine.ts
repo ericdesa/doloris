@@ -977,7 +977,7 @@ export class BodySceneEngine {
 
       const layer = this.paintLayers.get(zone.meshName);
       const surfaceNormal = layer
-        ? (this.computeSurfaceNormal(layer, surfacePt) ?? surfacePt.clone().sub(this.modelCenter).normalize())
+        ? this.computeSurfaceNormal(layer, surfacePt) ?? surfacePt.clone().sub(this.modelCenter).normalize()
         : surfacePt.clone().sub(this.modelCenter).normalize();
 
       // Project onto normalised ellipse space to get a uniform angular metric
@@ -1118,7 +1118,9 @@ export class BodySceneEngine {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(String(number), cx, cy);
-    return new THREE.CanvasTexture(canvas);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
   }
 
   dispose(): void {
