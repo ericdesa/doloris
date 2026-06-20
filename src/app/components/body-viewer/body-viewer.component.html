@@ -34,6 +34,28 @@
         />
       </div>
 
+      <!-- Choix de l'outil : tracé ou gomme -->
+      <div class="tb-group">
+        <button
+          type="button"
+          class="tb-btn"
+          [class.tb-btn--active]="!eraseMode()"
+          (click)="eraseMode.set(false)"
+          title="Dessiner la douleur en glissant sur le corps"
+        >
+          ✎ Tracé
+        </button>
+        <button
+          type="button"
+          class="tb-btn"
+          [class.tb-btn--active]="eraseMode()"
+          (click)="eraseMode.set(true)"
+          title="Gommer la douleur peinte en glissant sur le corps"
+        >
+          ⌫ Gomme
+        </button>
+      </div>
+
       <!-- Cancel -->
       <div class="tb-group">
         <button type="button" class="tb-btn" (click)="painData.removeLastZone()" [disabled]="painData.zoneCount() === 0">↩ Annuler</button>
@@ -107,7 +129,9 @@
   }
 
   <div class="viewer__hint">
-    @if (zoneDrawMode()) {
+    @if (eraseMode()) {
+      Glissez sur le corps pour gommer la douleur peinte
+    } @else if (zoneDrawMode()) {
       @if (activePaintZoneKey()) {
         Cliquer et glisser pour peindre la zone · choisir une zone dans la palette
       } @else {

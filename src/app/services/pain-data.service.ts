@@ -173,6 +173,54 @@ export class PainDataService {
     this.redrawTick.update((n) => n + 1);
   }
 
+  /**
+   * Outil gomme : retire de toutes les zones les points situés dans le rayon
+   * (monde) d'au moins un coup de gomme. Les zones devenues vides sont
+   * supprimées. Les points sans coordonnées monde (données anciennes) sont
+   * conservés (non effaçables). Un seul redraw à la fin.
+   */
+  erasePoints(strokes: ReadonlyArray<{ meshName: string; wx: number; wy: number; wz: number; worldR2: number }>): void {
+    if (strokes.length === 0) return;
+
+    let changed = false;
+    const next: PainZone[] = [];
+    const removedSelected = (id: string) => id === this.selectedZoneId();
+    let clearSelection = false;
+
+    for (const zone of this.zones()) {
+      const meshStrokes = strokes.filter((s) => s.meshName === zone.meshName);
+      if (meshStrokes.length === 0) {
+        next.push(zone);
+        continue;
+      }
+      const kept = zone.points.filter((p) => {
+        if (p.wx === undefined || p.wy === undefined || p.wz === undefined) return true;
+        for (const s of meshStrokes) {
+          const dx = s.wx - p.wx;
+          const dy = s.wy - p.wy;
+          const dz = s.wz - p.wz;
+          if (dx * dx + dy * dy + dz * dz < s.worldR2) return false;
+        }
+        return true;
+      });
+      if (kept.length === zone.points.length) {
+        next.push(zone);
+        continue;
+      }
+      changed = true;
+      if (kept.length === 0) {
+        if (removedSelected(zone.id)) clearSelection = true;
+        continue; // zone vidée → supprimée
+      }
+      next.push({ ...zone, points: kept, updatedAt: new Date().toISOString() });
+    }
+
+    if (!changed) return;
+    this.zones.set(next);
+    if (clearSelection) this.selectedZoneId.set(null);
+    this.redrawTick.update((n) => n + 1);
+  }
+
   mergeZones(sourceId: string, targetId: string): void {
     const source = this.zones().find((z) => z.id === sourceId);
     const target = this.zones().find((z) => z.id === targetId);

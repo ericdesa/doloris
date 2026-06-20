@@ -47,6 +47,10 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
   private currentZoneMesh: string | null = null;
   private currentZoneDrag: ZoneDrag | null = null;
 
+  // Erase state
+  private isErasing = false;
+  private eraseStrokes: { meshName: string; wx: number; wy: number; wz: number; worldR2: number }[] = [];
+
   readonly isOverBody = signal(false);
   readonly debugMode = signal(new URLSearchParams(window.location.search).has('debug'));
   readonly isLoading = signal(true);
@@ -55,6 +59,7 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
   readonly zoneDrawMode = signal(false);
   readonly activePaintZoneKey = signal<string | null>(null);
   readonly zoneBrushRadius = signal(0.02);
+  readonly eraseMode = signal(false);
 
   readonly selectedPainType = computed(() => getPainType(this.painData.draft().type));
 
@@ -96,6 +101,16 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
       if (this.zoneDrawMode()) {
         untracked(() => {
           if (!this.showZoneMap()) this.showZoneMap.set(true);
+          if (this.eraseMode()) this.eraseMode.set(false);
+        });
+      }
+    });
+
+    // Gomme et dessin de zones sont mutuellement exclusifs
+    effect(() => {
+      if (this.eraseMode()) {
+        untracked(() => {
+          if (this.zoneDrawMode()) this.zoneDrawMode.set(false);
         });
       }
     });
@@ -197,8 +212,41 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
     this.engine?.setControlsEnabled(true);
   }
 
+  private finishErase(): void {
+    if (!this.isErasing) return;
+    if (this.eraseStrokes.length > 0) {
+      this.painData.erasePoints(this.eraseStrokes);
+    }
+    this.isErasing = false;
+    this.eraseStrokes = [];
+    this.engine?.setControlsEnabled(true);
+  }
+
+  private eraseAtHit(hit: RaycastHit): void {
+    if (!this.engine) return;
+    const worldR = this.painData.draft().brushRadius * this.engine.currentModelRadius;
+    this.eraseStrokes.push({
+      meshName: hit.meshName,
+      wx: hit.worldPoint.x,
+      wy: hit.worldPoint.y,
+      wz: hit.worldPoint.z,
+      worldR2: worldR * worldR,
+    });
+    this.engine.eraseAt(hit.meshName, hit.worldPoint, worldR);
+  }
+
   onPointerDown(event: PointerEvent): void {
     if (!this.engine || event.button !== 0) return;
+
+    if (this.eraseMode()) {
+      const hit = this.engine.raycastFromScreen(event.clientX, event.clientY);
+      if (!hit) return;
+      this.eraseAtHit(hit);
+      this.isErasing = true;
+      this.engine.setControlsEnabled(false);
+      (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
+      return;
+    }
 
     if (this.zoneDrawMode()) {
       const paintKey = this.activePaintZoneKey();
@@ -251,10 +299,18 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
     this.isOverBody.set(showCursor);
     if (showCursor) {
       const draft = this.painData.draft();
-      const type = getPainType(draft.type);
-      this.engine.showBrushCursor(hit!.worldPoint, hit!.faceNormal, draft.brushRadius * this.engine.currentModelRadius, type.color);
+      if (this.eraseMode()) {
+        this.engine.showBrushCursor(hit!.worldPoint, hit!.faceNormal, draft.brushRadius * this.engine.currentModelRadius, '#9ca3af');
+      } else {
+        const type = getPainType(draft.type);
+        this.engine.showBrushCursor(hit!.worldPoint, hit!.faceNormal, draft.brushRadius * this.engine.currentModelRadius, type.color);
+      }
     } else {
       this.engine.hideBrushCursor();
+    }
+
+    if (this.isErasing && hit) {
+      this.eraseAtHit(hit);
     }
 
     if (this.isDrawingZone && this.currentZoneMesh && this.currentZoneDrag && hit?.meshName === this.currentZoneMesh) {
@@ -274,6 +330,7 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
   onPointerUp(): void {
     this.finishStroke();
     this.finishZoneDraw();
+    this.finishErase();
   }
 
   onPointerLeave(): void {
@@ -281,6 +338,7 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
     this.engine?.hideBrushCursor();
     this.finishStroke();
     this.finishZoneDraw();
+    this.finishErase();
   }
 
   private paintPoint(hit: RaycastHit): void {

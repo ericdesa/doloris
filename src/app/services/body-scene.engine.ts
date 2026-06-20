@@ -833,6 +833,43 @@ export class BodySceneEngine {
     if (dirty) colorAttr.needsUpdate = true;
   }
 
+  /**
+   * Gomme : réduit l'alpha des sommets situés dans le rayon du pinceau
+   * (atténuation douce vers les bords). Sert uniquement au retour visuel
+   * immédiat pendant le geste ; l'état persistant vient de la suppression des
+   * points de zone, et `redrawAll` réconcilie ensuite le buffer.
+   */
+  eraseAt(meshName: string, worldPoint: THREE.Vector3, worldRadius: number): void {
+    const layer = this.paintLayers.get(meshName);
+    if (!layer) return;
+
+    const { colorAttr, worldPositions } = layer;
+    const r2 = worldRadius * worldRadius;
+    const arr = colorAttr.array as Float32Array;
+    const px = worldPoint.x,
+      py = worldPoint.y,
+      pz = worldPoint.z;
+    const n = colorAttr.count;
+    let dirty = false;
+
+    for (let i = 0; i < n; i++) {
+      const dx = px - worldPositions[i * 3];
+      const dy = py - worldPositions[i * 3 + 1];
+      const dz = pz - worldPositions[i * 3 + 2];
+      const d2 = dx * dx + dy * dy + dz * dz;
+      if (d2 >= r2) continue;
+
+      const base = i * 4;
+      if (arr[base + 3] < 0.001) continue;
+
+      const t = 1 - Math.sqrt(d2) / worldRadius; // 0..1, plus fort au centre
+      arr[base + 3] *= 1 - t * t;
+      dirty = true;
+    }
+
+    if (dirty) colorAttr.needsUpdate = true;
+  }
+
   /** Efface toutes les couleurs de sommet puis redessine toutes les zones. */
   redrawAll(zones: PainZone[]): void {
     for (const layer of this.paintLayers.values()) {
