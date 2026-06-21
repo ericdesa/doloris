@@ -8,6 +8,7 @@
     (pointerup)="onPointerUp()"
     (pointercancel)="onPointerUp()"
     (pointerleave)="onPointerLeave()"
+    (click)="onViewerClick($event)"
   ></div>
 
   @if (isLoading()) {
@@ -34,22 +35,31 @@
         />
       </div>
 
-      <!-- Choix de l'outil : tracé ou gomme -->
-      <div class="tb-group">
+      <!-- Segment bar : Naviguer / Tracé / Gomme -->
+      <div class="tb-segment-bar">
         <button
           type="button"
-          class="tb-btn"
-          [class.tb-btn--active]="!eraseMode()"
-          (click)="eraseMode.set(false)"
+          class="tb-segment"
+          [class.tb-segment--active]="navigateMode()"
+          (click)="navigateMode.set(true)"
+          title="Naviguer autour du modèle sans éditer"
+        >
+          ↗ Naviguer
+        </button>
+        <button
+          type="button"
+          class="tb-segment"
+          [class.tb-segment--active]="!navigateMode() && !eraseMode()"
+          (click)="navigateMode.set(false); eraseMode.set(false)"
           title="Dessiner la douleur en glissant sur le corps"
         >
           ✎ Tracé
         </button>
         <button
           type="button"
-          class="tb-btn"
-          [class.tb-btn--active]="eraseMode()"
-          (click)="eraseMode.set(true)"
+          class="tb-segment"
+          [class.tb-segment--active]="eraseMode()"
+          (click)="navigateMode.set(false); eraseMode.set(true)"
           title="Gommer la douleur peinte en glissant sur le corps"
         >
           ⌫ Gomme
@@ -57,9 +67,13 @@
       </div>
 
       <!-- Cancel -->
-      <div class="tb-group">
-        <button type="button" class="tb-btn" (click)="painData.removeLastZone()" [disabled]="painData.zoneCount() === 0">↩ Annuler</button>
-      </div>
+      @if (!navigateMode()) {
+        <div class="tb-group">
+          <button type="button" class="tb-btn" (click)="painData.removeLastZone()" [disabled]="painData.zoneCount() === 0">
+            ↩ Annuler
+          </button>
+        </div>
+      }
     </div>
 
     <!-- Haut droit : Zones + Recentrer -->
@@ -129,16 +143,12 @@
   }
 
   <div class="viewer__hint">
-    @if (eraseMode()) {
-      Glissez sur le corps pour gommer la douleur peinte
-    } @else if (zoneDrawMode()) {
-      @if (activePaintZoneKey()) {
-        Cliquer et glisser pour peindre la zone · choisir une zone dans la palette
-      } @else {
-        Sélectionnez une zone dans la palette pour commencer à peindre
-      }
+    @if (navigateMode()) {
+      Déplacez-vous à la souris ou au clavier
+    } @else if (eraseMode()) {
+      Cliquez et glissez pour effacer une zone de douleur
     } @else {
-      Cliquez et glissez sur le corps pour dessiner l'étendue de la douleur
+      Cliquez et glissez pour peindre une zone de douleur
     }
   </div>
 </div>

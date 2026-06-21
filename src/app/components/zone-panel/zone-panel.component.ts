@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, inject, computed, signal, viewChildren, effect, ChangeDetectionStrategy } from '@angular/core';
 import { CdkDragDrop, CdkDrag, CdkDropList, CdkDragHandle } from '@angular/cdk/drag-drop';
 import { PainDataService } from '../../services/pain-data.service';
 import { PAIN_CHARACTERISTICS, PAIN_TYPES, getPainType, PainTypeId } from '../../models/pain-types';
@@ -16,12 +16,29 @@ export class ZonePanelComponent {
 
   readonly zonesNewestFirst = computed(() => [...this.painData.zones()].reverse());
 
+  private readonly zoneItems = viewChildren<ElementRef<HTMLElement>>('zoneItem');
+
   readonly painTypes = PAIN_TYPES;
   readonly characteristics = PAIN_CHARACTERISTICS;
   readonly getPainType = getPainType;
   readonly typeDropdownOpen = signal(false);
 
   readonly mergingFromZoneId = signal<string | null>(null);
+
+  constructor() {
+    effect(() => {
+      const selectedId = this.painData.selectedZoneId();
+      if (!selectedId) return;
+      setTimeout(() => {
+        for (const item of this.zoneItems()) {
+          if (item.nativeElement.classList.contains('zone-list__item--active')) {
+            item.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            break;
+          }
+        }
+      });
+    });
+  }
 
   selectZone(zone: PainZone): void {
     if (this.painData.selectedZoneId() === zone.id) {

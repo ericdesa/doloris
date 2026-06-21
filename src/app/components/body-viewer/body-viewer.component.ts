@@ -17,7 +17,7 @@ import { PainDataService } from '../../services/pain-data.service';
 import { ZoneMapService } from '../../services/zone-map.service';
 import { resolveZoneLabel } from '../../services/zone-lookup.utils';
 import { PAIN_TYPES, getPainType } from '../../models/pain-types';
-import { UvPoint } from '../../models/pain-zone.model';
+import { PainZone, UvPoint } from '../../models/pain-zone.model';
 import { ZoneDrag } from '../../models/zone-drag.model';
 
 @Component({
@@ -59,6 +59,7 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
   readonly zoneDrawMode = signal(false);
   readonly activePaintZoneKey = signal<string | null>(null);
   readonly zoneBrushRadius = signal(0.02);
+  readonly navigateMode = signal(false);
   readonly eraseMode = signal(false);
 
   readonly selectedPainType = computed(() => getPainType(this.painData.draft().type));
@@ -96,21 +97,31 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
       this.engine?.setZoneMapVisible(this.showZoneMap());
     });
 
-    // Entrer en mode dessin de zones active automatiquement l'overlay
+    // Navigation, dessin de zones et gomme sont mutuellement exclusifs
     effect(() => {
-      if (this.zoneDrawMode()) {
+      if (this.navigateMode()) {
         untracked(() => {
-          if (!this.showZoneMap()) this.showZoneMap.set(true);
           if (this.eraseMode()) this.eraseMode.set(false);
+          if (this.zoneDrawMode()) this.zoneDrawMode.set(false);
         });
       }
     });
 
-    // Gomme et dessin de zones sont mutuellement exclusifs
     effect(() => {
       if (this.eraseMode()) {
         untracked(() => {
+          if (this.navigateMode()) this.navigateMode.set(false);
           if (this.zoneDrawMode()) this.zoneDrawMode.set(false);
+        });
+      }
+    });
+
+    effect(() => {
+      if (this.zoneDrawMode()) {
+        untracked(() => {
+          if (!this.showZoneMap()) this.showZoneMap.set(true);
+          if (this.navigateMode()) this.navigateMode.set(false);
+          if (this.eraseMode()) this.eraseMode.set(false);
         });
       }
     });
@@ -165,6 +176,35 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
 
   resetView(): void {
     this.engine?.resetView(true);
+  }
+
+  onViewerClick(event: PointerEvent): void {
+    if (!this.engine || !this.navigateMode()) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('button, input, .tb-segment-bar')) return;
+
+    const hit = this.engine.raycastFromScreen(event.clientX, event.clientY);
+    if (!hit) return;
+
+    const zone = this.findZoneAt(hit);
+    if (zone) {
+      this.painData.selectZone(zone.id);
+    }
+  }
+
+  private findZoneAt(hit: RaycastHit): PainZone | null {
+    const zones = this.painData.zones();
+    for (let i = zones.length - 1; i >= 0; i--) {
+      const zone = zones[i];
+      if (zone.meshName !== hit.meshName) continue;
+      const r2 = zone.brushRadius * zone.brushRadius;
+      for (const p of zone.points) {
+        const du = hit.uv.u - p.u;
+        const dv = hit.uv.v - p.v;
+        if (du * du + dv * dv < r2) return zone;
+      }
+    }
+    return null;
   }
 
   onBrushSizeChange(event: Event): void {
@@ -238,6 +278,8 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
   onPointerDown(event: PointerEvent): void {
     if (!this.engine || event.button !== 0) return;
 
+    if (this.navigateMode()) return;
+
     if (this.eraseMode()) {
       const hit = this.engine.raycastFromScreen(event.clientX, event.clientY);
       if (!hit) return;
@@ -295,7 +337,7 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
 
     const hit = this.engine.raycastFromScreen(event.clientX, event.clientY);
 
-    const showCursor = !!hit && !this.zoneDrawMode();
+    const showCursor = !!hit && !this.zoneDrawMode() && !this.navigateMode();
     this.isOverBody.set(showCursor);
     if (showCursor) {
       const draft = this.painData.draft();

@@ -40,6 +40,7 @@
         @for (zone of zonesNewestFirst(); track zone.id; let i = $index) {
           @let zoneNumber = painData.zoneCount() - i;
           <li
+            #zoneItem
             class="zone-list__item"
             cdkDrag
             [cdkDragDisabled]="!!mergingFromZoneId()"
