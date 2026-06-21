@@ -99,6 +99,9 @@ export class ReportComponent {
   }
 
   saveSharedToProject(): void {
+    const name = window.prompt('Nom du nouveau projet :', 'Rapport partagé');
+    if (!name) return;
+    this.projectService.createProject(name.trim() || 'Rapport partagé');
     this.painData.save();
     this.isSharedReport.set(false);
   }
