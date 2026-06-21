@@ -321,7 +321,7 @@ export class PainDataService {
     this.redrawTick.update((n) => n + 1);
   }
 
-  loadSharedZones(zones: PainZone[]): void {
+  loadImportedZones(zones: PainZone[]): void {
     this._skipStorageLoad = true;
     this._skipPersist = true;
     this.zones.set(zones);

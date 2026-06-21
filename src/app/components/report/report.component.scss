@@ -22,7 +22,7 @@
 
 .report__back,
 .report__print,
-.report__share {
+.report__action-btn {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -44,17 +44,12 @@
   }
 }
 
-.report__share--copied {
-  color: #2f9e8f;
-  border-color: #2f9e8f;
-}
-
-.report__share:disabled {
+.report__action-btn:disabled {
   opacity: 0.45;
   cursor: default;
 }
 
-.share-notice {
+.import-notice {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -314,37 +309,6 @@ hr {
   font-style: italic;
   color: #5a6b73;
   margin: 8px 0 0;
-}
-
-.share-footer {
-  margin-top: 36px;
-  padding: 14px 16px;
-  border: 1px solid #dbe5e8;
-  border-radius: 6px;
-  background: #f9fbfc;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-
-  &__label {
-    font-size: 0.78rem;
-    color: #8a9da5;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  &__url {
-    font-size: 0.8rem;
-    color: #2e3d45;
-    word-break: break-all;
-    text-decoration: none;
-    cursor: pointer;
-
-    &:hover {
-      color: #2f9e8f;
-      text-decoration: underline;
-    }
-  }
 }
 
 .footer {

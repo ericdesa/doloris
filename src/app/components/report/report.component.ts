@@ -2,8 +2,8 @@ import { Component, ChangeDetectionStrategy, inject, signal, computed, effect } 
 import { Router } from '@angular/router';
 
 import { PainDataService } from '../../services/pain-data.service';
-import { ShareService } from '../../services/share.service';
 import { ProjectService } from '../../services/project.service';
+import { ImportService } from '../../services/import.service';
 import { getPainType, PAIN_TYPES } from '../../models/pain-types';
 import { BodyViewerComponent } from '../body-viewer/body-viewer.component';
 
@@ -17,8 +17,8 @@ import { BodyViewerComponent } from '../body-viewer/body-viewer.component';
 export class ReportComponent {
   readonly painData = inject(PainDataService);
   private readonly router = inject(Router);
-  private readonly share = inject(ShareService);
   private readonly projectService = inject(ProjectService);
+  private readonly importService = inject(ImportService);
 
   private readonly commentKey = computed(() => `pain-mapper:report-comment:${this.projectService.currentProjectId()}`);
 
@@ -41,9 +41,8 @@ export class ReportComponent {
   readonly showViewer = signal(false);
   readonly overviewImages = this.painData.overviewImages;
 
-  readonly copied = signal(false);
-  readonly shareUrl = computed(() => (this.zones().length > 0 ? this.share.getShareUrl(this.zones()) : null));
-  readonly isSharedReport = signal(false);
+  readonly isImportedReport = signal(false);
+  private importedComment: string | null = null;
 
   constructor() {
     effect(() => {
@@ -51,12 +50,16 @@ export class ReportComponent {
       this.comment.set(localStorage.getItem(key) ?? '');
     });
 
-    const shared = this.share.extractFromFragment();
-    if (shared) {
-      this.isSharedReport.set(true);
-      this.painData.loadSharedZones(shared);
-      this.share.clearFragment();
-    }
+    effect(() => {
+      const pending = this.importService.pendingImport();
+      if (pending) {
+        this.importService.clearPending();
+        this.importedComment = pending.comment ?? null;
+        this.painData.loadImportedZones(pending.zones);
+        this.showViewer.set(true);
+        this.isImportedReport.set(true);
+      }
+    });
 
     const needsZones = this.painData.reportImages().size === 0 && this.painData.zones().length > 0;
     const needsOverview = !this.painData.overviewImages();
@@ -98,16 +101,21 @@ export class ReportComponent {
     return this.painData.reportImages().get(zoneId);
   }
 
-  saveSharedToProject(): void {
-    const name = window.prompt('Nom du nouveau projet :', 'Rapport partagé');
+  saveImportedToProject(): void {
+    const name = window.prompt('Nom du nouveau projet :', 'Rapport importé');
     if (!name) return;
-    this.projectService.createProject(name.trim() || 'Rapport partagé');
+    this.projectService.createProject(name.trim() || 'Rapport importé');
+    if (this.importedComment) {
+      this.onCommentChange(this.importedComment);
+    }
     this.painData.save();
-    this.isSharedReport.set(false);
+    this.isImportedReport.set(false);
+    this.importedComment = null;
   }
 
-  dismissSharedBanner(): void {
-    this.isSharedReport.set(false);
+  dismissImportBanner(): void {
+    this.isImportedReport.set(false);
+    this.importedComment = null;
   }
 
   back(): void {
@@ -118,10 +126,44 @@ export class ReportComponent {
     window.print();
   }
 
-  async copyShareLink(): Promise<void> {
-    const url = this.share.getShareUrl(this.zones());
-    await navigator.clipboard.writeText(url);
-    this.copied.set(true);
-    setTimeout(() => this.copied.set(false), 2000);
+  exportToFile(): void {
+    const data = JSON.stringify({
+      zones: this.zones(),
+      comment: this.comment(),
+      exportedAt: new Date().toISOString(),
+    });
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `doloris-${Date.now()}.doloris`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  onImportFile(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const json = JSON.parse(reader.result as string);
+        if (Array.isArray(json.zones)) {
+          this.importedComment = json.comment ?? null;
+          this.painData.loadImportedZones(json.zones);
+          if (typeof json.comment === 'string') {
+            this.onCommentChange(json.comment);
+          }
+          this.showViewer.set(true);
+          this.isImportedReport.set(true);
+        }
+      } catch {
+        /* fichier invalide, ignoré */
+      }
+    };
+    reader.readAsText(file);
+    input.value = '';
   }
 }

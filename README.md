@@ -17,6 +17,7 @@ Cliquez et faites glisser sur le modèle 3D pour marquer les endroits où vous a
 
 **2. Décrivez chaque zone**
 Pour chaque zone, précisez :
+
 - le type de douleur (brûlure, décharge, picotement, crampe, pression...)
 - l'intensité, de 1 à 10
 - les circonstances (constante, la nuit, aggravée par le mouvement, irradiante...)
@@ -26,7 +27,7 @@ Pour chaque zone, précisez :
 En un clic, obtenez un document structuré avec les vues du corps annoté, le détail de chaque zone et vos observations. Imprimez-le ou exportez-le en PDF pour l'apporter en consultation.
 
 **4. Partagez si besoin**
-Un lien de partage peut être généré et envoyé directement à votre médecin. Aucun fichier à joindre — toutes les informations sont contenues dans le lien.
+Un export peut être généré et envoyé directement à votre médecin.
 
 ---
 
@@ -38,4 +39,4 @@ Créez autant de projets que nécessaire : un par type de douleur, un par consul
 
 ## Vie privée
 
-Doloris ne collecte aucune donnée. Tout reste dans votre navigateur — rien n'est envoyé à l'extérieur, ni lors de l'utilisation, ni lors du partage.
+Doloris ne collecte aucune donnée. Tout reste dans votre navigateur.
