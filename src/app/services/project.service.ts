@@ -33,7 +33,7 @@ export class ProjectService {
   }
 
   createProject(name: string): void {
-    const trimmed = name.trim() || 'Nouveau projet';
+    const trimmed = name.trim() || 'Votre projet';
     const ts = now();
     const project: Project = { id: generateId(), name: trimmed, createdAt: ts, updatedAt: ts };
     this.projects.update((list) => [...list, project]);
