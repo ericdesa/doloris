@@ -1,5 +1,6 @@
-import { Component, ChangeDetectionStrategy, inject, signal, ElementRef, HostListener } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, effect, ElementRef, HostListener } from '@angular/core';
 import { ProjectService } from '../../services/project.service';
+import { PainDataService } from '../../services/pain-data.service';
 
 @Component({
   selector: 'app-project-switcher',
@@ -9,6 +10,7 @@ import { ProjectService } from '../../services/project.service';
 })
 export class ProjectSwitcherComponent {
   readonly projectService = inject(ProjectService);
+  private readonly painData = inject(PainDataService);
   private readonly el = inject(ElementRef);
 
   readonly isOpen = signal(false);
@@ -16,6 +18,16 @@ export class ProjectSwitcherComponent {
   readonly renameValue = signal('');
   readonly isCreating = signal(false);
   readonly newName = signal('');
+
+  readonly showSaved = signal(false);
+
+  constructor() {
+    effect(() => {
+      this.painData.savedTick();
+      this.showSaved.set(true);
+      setTimeout(() => this.showSaved.set(false), 1000);
+    });
+  }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {

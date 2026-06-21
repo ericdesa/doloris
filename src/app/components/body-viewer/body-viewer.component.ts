@@ -309,6 +309,7 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
     const hit = this.engine.raycastFromScreen(event.clientX, event.clientY);
     if (!hit) return;
 
+    this.painData.setPersistSuspended(true);
     const label = resolveZoneLabel(
       this.zoneMapService.drags(),
       this.engine.currentModelRadius,
@@ -395,6 +396,7 @@ export class BodyViewerComponent implements AfterViewInit, OnDestroy {
     if (this.currentZoneId) {
       this.painData.finalizeZonePoints(this.currentZoneId, this.currentPoints);
     }
+    this.painData.setPersistSuspended(false);
     this.isDrawing = false;
     this.currentZoneId = null;
     this.currentMeshName = null;

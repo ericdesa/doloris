@@ -1,4 +1,6 @@
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Subject } from 'rxjs';
+import { throttleTime } from 'rxjs/operators';
 import { PainZone, PainZoneDraft, UvPoint, createDefaultDraft } from '../models/pain-zone.model';
 import { ProjectService } from './project.service';
 
@@ -46,6 +48,9 @@ export class PainDataService {
    */
   readonly redrawTick = signal(0);
 
+  /** Pulsé à chaque sauvegarde automatique dans localStorage. */
+  readonly savedTick = signal(0);
+
   readonly selectedZone = computed(() => {
     const id = this.selectedZoneId();
     if (!id) return null;
@@ -54,8 +59,11 @@ export class PainDataService {
 
   readonly zoneCount = computed(() => this.zones().length);
 
+  private readonly save$ = new Subject<void>();
+
   private _skipStorageLoad = false;
   private _skipPersist = false;
+  private _persistSuspended = false;
 
   constructor() {
     // Charge les zones à chaque changement de projet
@@ -73,18 +81,33 @@ export class PainDataService {
         this.reportImages.set(new Map());
       });
     });
-    // Persiste les zones à chaque modification
+
+    // Persiste les zones à chaque modification (throttled à 1 s)
+    this.save$.pipe(throttleTime(1000, undefined, { leading: true, trailing: true })).subscribe(() => {
+      this.persist(this.storageKey(), this.zones());
+      this.savedTick.update((n) => n + 1);
+    });
+
     effect(() => {
-      const key = this.storageKey();
-      const zones = this.zones();
+      this.storageKey();
+      this.zones();
       untracked(() => {
         if (this._skipPersist) {
           this._skipPersist = false;
           return;
         }
-        this.persist(key, zones);
+        if (this._persistSuspended) return;
+        this.save$.next();
       });
     });
+  }
+
+  /** Suspend/rétablit la sauvegarde automatique (utilisé pendant le tracé d'une zone). */
+  setPersistSuspended(suspended: boolean): void {
+    this._persistSuspended = suspended;
+    if (!suspended) {
+      this.save$.next();
+    }
   }
 
   // ---------------------------------------------------------------------
@@ -228,11 +251,7 @@ export class PainDataService {
     this.zones.update((zones) =>
       zones
         .filter((z) => z.id !== sourceId)
-        .map((z) =>
-          z.id === targetId
-            ? { ...z, points: [...z.points, ...source.points], updatedAt: new Date().toISOString() }
-            : z,
-        ),
+        .map((z) => (z.id === targetId ? { ...z, points: [...z.points, ...source.points], updatedAt: new Date().toISOString() } : z)),
     );
     if (this.selectedZoneId() === sourceId) {
       this.selectZone(targetId);

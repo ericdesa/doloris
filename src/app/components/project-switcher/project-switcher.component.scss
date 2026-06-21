@@ -31,11 +31,33 @@
 }
 
 .ps__trigger-label {
+  position: relative;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
   min-width: 0;
+}
+
+.ps__label-text {
+  transition: opacity 0.2s ease;
+
+  &--hidden {
+    opacity: 0;
+  }
+}
+
+.ps__label-saved {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+
+  &--visible {
+    opacity: 1;
+  }
 }
 
 .ps__chevron {
